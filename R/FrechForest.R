@@ -957,6 +957,7 @@ elagage <- function(tree){
 #' @import kmlShape
 #' @import Evomorph
 #' @import RiemBase
+#' @import pbapply
 #'
 #' @return
 #' @export
