@@ -194,13 +194,14 @@ impurity_split <- function(Y,split,timeScale=0.1){
 #' @param X
 #' @param Y
 #' @param timeScale
+#' @param ntry
 #'
 #' @import kmlShape
 #' @import Evomorph
 #' @import RiemBase
 #'
 #' @keywords internal
-ERvar_split <- function(X ,Y,timeScale=0.1){
+ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
   impur <- rep(0,dim(X$X)[length(dim(X$X))])
   toutes_imp <- list()
@@ -238,36 +239,92 @@ ERvar_split <- function(X ,Y,timeScale=0.1){
 
     if( X$type=="curve"){
 
-      # Il faut commencer par tirer les deux centres ::
-      id_centers <- sample(unique(X$id),2)
+      # Il faut commencer par tirer les multiples centres ::
 
-      w_gauche <- which(X$id==id_centers[1])
-      w_droit <- which(X$id==id_centers[2])
-
-      split[[i]] <- rep(2,length(unique(X$id)))
-      for (l in 1:length(unique(X$id))){
-        w <- which(X$id==unique(X$id)[l])
-        dg <- distFrechet(X$time[w_gauche],X$X[w_gauche,i],X$time[w],X$X[w,i], timeScale = timeScale)
-        dd <- distFrechet(X$time[w_droit],X$X[w_droit,i],X$time[w],X$X[w,i], timeScale = timeScale)
-        if (dg<=dd) split[[i]][l] <- 1
+      id_centers <- matrix(NA,ntry,2)
+      for (l in 1:ntry){
+        id_centers[l,] <- sample(unique(X$id),2)
       }
-      impurete <- impurity_split(Y,split[[i]], timeScale)
-      impur[i] <- impurete$impur
-      toutes_imp[[i]] <- impurete$imp_list
+
+      ### Il faut ensuite boucler sur le ntry
+      split_prime <- matrix(2,ntry,length(unique(X$id)))
+      u <- 0
+      impurete2 <- list()
+      qui <- NULL
+      imp <- NULL
+
+      for (c in 1:ntry){
+
+        w_gauche <- which(X$id==id_centers[c,1])
+        w_droit <- which(X$id==id_centers[c,2])
+
+        for (l in 1:length(unique(X$id))){
+
+          w <- which(X$id==unique(X$id)[l])
+          dg <- distFrechet(X$time[w_gauche],X$X[w_gauche,i],X$time[w],X$X[w,i], timeScale = timeScale)
+          dd <- distFrechet(X$time[w_droit],X$X[w_droit,i],X$time[w],X$X[w,i], timeScale = timeScale)
+          if (dg<=dd) split_prime[c,l] <- 1
+        }
+
+        if (length(unique(split_prime[c,]))>1){
+          u <- u+1
+          qui <- c(qui, c)
+          impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
+          imp <- c(imp,impurete2[[c]]$impur)
+        }
+
+      }
+
+      if (u>0){
+        gagnant <- qui[which.min(imp)]
+        split[[i]] <- split_prime[gagnant,]
+        impurete <- impurete2[[gagnant]]
+        impur[i] <- impurete$impur
+        toutes_imp[[i]] <- impurete$imp_list
+      }
+
+      else{
+        impur[i] <- Inf
+        split[[i]] <- Inf
+      }
+
     }
 
     if (X$type=="shape"){
       if (dim(X$X[,,,i])[3]>2){
-        id_centers <- sample(X$id,2)
-        split[[i]] <- rep(2,length(unique(X$id)))
-        ## Il nous faut calculer les distances à gauche et à droite pour chaque élément
-        dg <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[1]),i])
-        dd <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[2]),i])
-        for (l in 1:length(unique(X$id))){
-          if (dg[l]<=dd[l]) split[[i]][l] <- 1
+
+        id_centers <- matrix(NA,ntry,2)
+        for (l in 1:ntry){
+          id_centers[l,] <- sample(X$id,2)
         }
-        if (length(unique(split[[i]]))>1){
-          impurete <- impurity_split(Y,split[[i]], timeScale)
+
+        split_prime <- matrix(2,ntry,length(X$id))
+
+        u <- 0
+        qui <- NULL
+        impurete2 <- list()
+        imp <- NULL
+
+        for (c in 1:ntry){
+          dg <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[c,1]),i])
+          dd <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[c,2]),i])
+          for (l in 1:length(unique(X$id))){
+            if (dg[l]<=dd[l]) split_prime[c,l] <- 1
+          }
+          if (length(split_prime[c,])>1){
+            u <- u+1
+            qui <- c(qui,c)
+            impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
+            imp <- c(imp, impurete2[[c]]$impur)
+          }
+        }
+        ## Il nous faut calculer les distances à gauche et à droite pour chaque élément
+
+        if (u>0){
+          gagnant <- qui[which.min(imp)]
+          split[[i]] <- split_prime[gagnant,]
+
+          impurete <- impurete2[[gagnant]]
           impur[i] <- impurete$impur
           toutes_imp[[i]] <- impurete$imp_list
         }
@@ -289,22 +346,46 @@ ERvar_split <- function(X ,Y,timeScale=0.1){
 
     if (X$type=="image"){
       if (dim(X$X[,,,i])[3]>2){
-        id_centers <- sample(X$id,2)
-        split[[i]] <- rep(2,length(unique(X$id)))
-
-        factory <- riemfactory(X$X[,,,i])
-        w_g <- which(X$id==id_centers[1])
-        w_d <- which(X$id==id_centers[2])
-        ### Il nous faut calculer la distance :
-        D <- rbase.pdist(factory)
-        dg <- D[,w_g]
-        dd <- D[,w_d]
-        for (l in 1:length(unique(X$id))){
-          if (dg[l]<=dd[l]) split[[i]][l] <- 1
+        id_centers <- matrix(NA,ntry,2)
+        for (l in 1:ntry){
+          id_centers[l,] <- sample(X$id,2)
         }
 
-        if (length(unique(split[[i]]))>1){
-          impurete <- impurity_split(Y,split[[i]], timeScale)
+        split_prime <- matrix(2,ntry,length(X$id))
+
+        factory <- riemfactory(X$X[,,,i])
+
+        u <- 0
+        qui <- NULL
+        impurete2 <- list()
+        imp <- NULL
+
+        for (c in 1:ntry){
+
+          w_g <- which(X$id==id_centers[1])
+          w_d <- which(X$id==id_centers[2])
+          ### Il nous faut calculer la distance :
+          D <- rbase.pdist(factory)
+          dg <- D[,w_g]
+          dd <- D[,w_d]
+          for (l in 1:length(unique(X$id))){
+            if (dg[l]<=dd[l]) split_prime[c,l] <- 1
+          }
+          if (length(unique(split_prime[c,]))>1){
+            u <-u+1
+            qui <- c(qui,c)
+            impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
+            imp <- c(imp,impurete2[[c]]$impur)
+          }
+
+        }
+
+
+
+        if (u>0){
+          gagnant <- qui[which.min(imp)]
+          split <- split_prime[gagnant,]
+          impurete <- impurete2[[gagnant]]
           impur[i] <- impurete$impur
           toutes_imp[[i]] <- impurete$imp_list
         }
@@ -327,16 +408,40 @@ ERvar_split <- function(X ,Y,timeScale=0.1){
     if(X$type=="scalar"){
       if (length(unique(X$X[,i]))>2){
 
-        centers <- sample(X$X[,i],2)
-        split[[i]] <- rep(2,length(X$X[,i]))
+        ### On doit tier les centres
+        #centers <- sample(X$X[,i],2)
 
-        for (l in 1:length(X$X[,i])){
-          if (abs(centers[1]-X$X[l,i])<= abs(centers[2]-X$X[l,i])) split[[i]][l] <- 1
+        centers <- matrix(NA,ntry,2)
+        for (l in 1:ntry){
+          centers[l,] <- sample(X$X[,i],2)
         }
 
+        #split[[i]] <- rep(2,length(X$X[,i]))
+        split_prime <- matrix(2,ntry,length(X$X[,i]))
 
-        if (length(unique(split[[i]]))>1){
-          impurete <- impurity_split(Y,split[[i]], timeScale)
+        for (l in 1:length(X$X[,i])){
+          for (k in 1:ntry){
+            if (abs(centers[k,1]-X$X[l,i])<= abs(centers[k,2]-X$X[l,i])) split_prime[k,l] <- 1
+          }
+        }
+
+        u <- 0
+        qui <- NULL
+        impurete2 <- list()
+        imp <- NULL
+        for (k in 1:ntry){
+          if (length(unique(split_prime[k,]))>1){
+            u <- u+1
+            qui <- c(qui,k)
+            impurete2[[k]] <- c(impurete2,impurity_split(Y,split_prime[k,], timeScale))
+            imp <- c(imp, impurete2[[k]]$impur)
+          }
+        }
+
+        if (u>0){
+          gagnant <- qui[which.min(imp)]
+          split[[i]] <- split_prime[gagnant,]
+          impurete <- impurete2[[gagnant]]
           impur[i] <- impurete$impur
           toutes_imp[[i]] <- impurete$imp_list
         }
@@ -1256,6 +1361,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 #' @param ERT [logical]:
 #' @param aligned.shape [logical]:
 #' @param timeScale [numeric]:
+#' @param ntry [numeric]:
 #' @param ... : option
 #'
 #' @import kmlShape
@@ -1265,7 +1371,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 #' @import geomorph
 #'
 #' @keywords internal
-Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,aligned.shape=FALSE, timeScale=0.1, ...){
+Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,aligned.shape=FALSE,ntry=3, timeScale=0.1, ...){
 
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
@@ -1404,7 +1510,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Factor <- var_split(Factor_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Factor <- ERvar_split(Factor_courant,Y_courant,timeScale)}
+          else{feuille_split_Factor <- ERvar_split(Factor_courant,Y_courant,timeScale,ntry = ntry)}
 
           if (feuille_split_Factor$Pure==FALSE){
             F_SPLIT <- rbind(F_SPLIT,c("Factor",feuille_split_Factor$impurete))
@@ -1418,10 +1524,12 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Curve <- var_split(Curve_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Curve <- ERvar_split(Curve_courant,Y_courant,timeScale)}
+          else{feuille_split_Curve <- ERvar_split(Curve_courant,Y_courant,timeScale, ntry=ntry)}
 
-          F_SPLIT <- rbind(F_SPLIT,c("Curve",feuille_split_Curve$impurete))
-          decoupe <- decoupe +1
+          if (feuille_split_Curve$Pure==FALSE){
+            F_SPLIT <- rbind(F_SPLIT,c("Curve",feuille_split_Curve$impurete))
+            decoupe <- decoupe +1
+          }
         }
 
         if (is.element("scalar",split.spaces)==TRUE){
@@ -1430,7 +1538,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Scalar <- var_split(Scalar_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Scalar <- ERvar_split(Scalar_courant,Y_courant,timeScale)}
+          else{feuille_split_Scalar <- ERvar_split(Scalar_courant,Y_courant,timeScale, ntry=ntry)}
 
           if (feuille_split_Scalar$Pure==FALSE){
             F_SPLIT <- rbind(F_SPLIT,c("Scalar",feuille_split_Scalar$impurete))
@@ -1442,7 +1550,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
         if (is.element("shape",split.spaces)==TRUE){
 
-          feuille_split_Shape <- ERvar_split(Shape_courant,Y_courant,timeScale)
+          feuille_split_Shape <- ERvar_split(Shape_courant,Y_courant,timeScale, ntry=ntry)
 
 
           if (feuille_split_Shape$Pure==FALSE){
@@ -1455,7 +1563,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
         if (is.element("image",split.spaces)==TRUE){
 
-          feuille_split_Image <- ERvar_split(Image_courant,Y_courant,timeScale)
+          feuille_split_Image <- ERvar_split(Image_courant,Y_courant,timeScale, ntry=ntry)
 
           if (feuille_split_Image$Pure==FALSE){
             F_SPLIT <- rbind(F_SPLIT,c("Image",feuille_split_Image$impurete))
@@ -1645,6 +1753,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 #' @param ERT
 #' @param aligned.shape
 #' @param timeScale
+#' @param ntry
 #' @param ...
 #'
 #' @import foreach
@@ -1653,13 +1762,13 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 #' @import pbapply
 #'
 #' @keywords internal
-rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE, aligned.shape=FALSE,timeScale=0.1, ...){
+rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE, aligned.shape=FALSE,ntry=3,timeScale=0.1, ...){
 
   cl <- parallel::makeCluster(ncores)
   doParallel::registerDoParallel(cl)
 
   trees <- pbsapply(1:ntree, FUN=function(i){
-    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT, aligned.shape=aligned.shape,timeScale=timeScale, ...)
+    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT, aligned.shape=aligned.shape,ntry=ntry,timeScale=timeScale, ...)
   },cl=cl)
 
   parallel::stopCluster(cl)
@@ -2286,6 +2395,7 @@ permutation_shapes <- function(Shapes, id){
 #' @param ntree [numeric]: Number of trees to grow. This should not be set to too small a number, to ensure that every input row gets predicted at least a few times.
 #' @param ncores [numeric]: Number of cores used to build Frechet randomized trees in parallel, defaulting to number of cores of the computer minus 1.
 #' @param ERT [logical]: If \code{TRUE} uses Extremly Randomized Frechet Trees to build the Frechet forest.
+#' @param ntry [numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.
 #' @param timeScale [numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.
 #' @param imp [logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)
 #' @param ... : optional parameters to be passed to the low level function
@@ -2306,7 +2416,7 @@ permutation_shapes <- function(Shapes, id){
 #' }
 #' @export
 #'
-FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1, imp=TRUE, ...){
+FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, ...){
 
 
   ### On va regarder les différentes entrées:
@@ -2368,7 +2478,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   print("Building the maximal Frechet trees...")
 
   debut <- Sys.time()
-  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE)
+  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE)
   temps <- Sys.time() - debut
 
 

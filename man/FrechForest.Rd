@@ -6,7 +6,8 @@
 \usage{
 FrechForest(Curve = NULL, Scalar = NULL, Factor = NULL,
   Shape = NULL, Image = NULL, Y, mtry = NULL, ntree = 100,
-  ncores = NULL, ERT = FALSE, timeScale = 0.1, imp = TRUE, ...)
+  ncores = NULL, ERT = FALSE, timeScale = 0.1, ntry = 3,
+  imp = TRUE, ...)
 }
 \arguments{
 \item{Curve}{[list]: A list that contains the different input curves. It must contain the following elements (no choice): \code{X} the matrix of the different curves, each column code for a different curve variable; \code{id} is the vector of the identifiers for the different trajectories contained in \code{X}; \code{time} is the vector of the measurement times associated with the trajectories contained in \code{X}.}
@@ -30,6 +31,8 @@ FrechForest(Curve = NULL, Scalar = NULL, Factor = NULL,
 \item{ERT}{[logical]: If \code{TRUE} uses Extremly Randomized Frechet Trees to build the Frechet forest.}
 
 \item{timeScale}{[numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.}
+
+\item{ntry}{[numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.}
 
 \item{imp}{[logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)}
 
