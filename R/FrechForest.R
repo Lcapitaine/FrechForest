@@ -16,8 +16,7 @@ read.Xarg <- function(z){
 
 #' Factor partitions finder
 #'
-#' This function is used to find all the unique partitions of k factors into 2 groups, can be used up to
-#' 13 different factors
+#' This function is used to find all the unique partitions of k factors into 2 groups
 #'
 #' @param Factor
 #' @param id
@@ -78,7 +77,6 @@ ordonne <- function(X , time , id){
 #'
 #' @param Y
 #' @param timeScale
-#' @param center
 #'
 #' @import kmlShape
 #' @import RiemBase
@@ -89,7 +87,7 @@ ordonne <- function(X , time , id){
 #'
 #'
 #' @keywords internal
-impurity <- function(Y, center=NULL,timeScale=0.1){
+impurity <- function(Y, timeScale=0.1){
 
   if (Y$type=="curve"){
     traj <- Y$Y
@@ -97,13 +95,11 @@ impurity <- function(Y, center=NULL,timeScale=0.1){
     time <- Y$time
     imp <- 0
     trajLong <- data.frame(id=id,time=time,traj=traj)
-    if (is.null(center)==TRUE) meanF <- meanFrechet(trajLong = trajLong, timeScale = timeScale)
-    else meanF <- data.frame(times=Y$time[which(Y$id==center)],traj=Y$Y[which(Y$id==center)])
+    meanF <- meanFrechet(trajLong = trajLong, timeScale = timeScale)
     for (i in unique(id)){
-       imp <- imp + distFrechet(meanF$times, meanF$traj, time[which(id==i)], traj[which(id==i)], timeScale = timeScale)^2
+      imp <- imp + distFrechet(meanF$times, meanF$traj, time[which(id==i)], traj[which(id==i)], timeScale = timeScale)^2
     }
-    ## On va utiliser sapply
-    #imp <- mean(sapply(unique(id),FUN=function(i) distFrechet(meanF$times, meanF$traj, time[which(id==i)], traj[which(id==i)], timeScale = timeScale)^2))
+    imp <- imp/length(unique(id))
     return(imp)
   }
 
@@ -145,36 +141,45 @@ impurity <- function(Y, center=NULL,timeScale=0.1){
 #'
 #'
 #' @keywords internal
-impurity_split <- function(Y,split,centers=NULL,timeScale=0.1){
+impurity_split <- function(Y,split,timeScale=0.1){
   impur <- 0
   imp <- list()
   for (i in 1:2){
     fils <- unique(Y$id)[which(split==i)]
     prop <- length(fils)/length(unique(Y$id))
     if (Y$type=="curve"){
-
-      w <- which(Y$id %in% fils)
-
-      if (is.null(centers)==TRUE) imp[[i]] <- impurity(list(type="curve",Y=Y$Y[w],id=Y$id[w],time=Y$time[w]))
-      else imp[[i]] <- impurity(list(type="curve",Y=Y$Y[w],id=Y$id[w],time=Y$time[w]), center = centers[i])
+      w <- NULL
+      for (j in 1:length(fils)){
+        w <- c(w, which(Y$id==fils[j]))
+      }
+      imp[[i]] <- impurity(list(type="curve",Y=Y$Y[w],id=Y$id[w],time=Y$time[w]))
       impur <- impur + imp[[i]]*prop
     }
 
     if (Y$type=="image"){
-      w <- which(split==i)
+      w <- NULL
+      for (j in 1:length(fils)){
+        w <- c(w,which(Y$id==fils[j]))
+      }
       imp[[i]] <- impurity(list(type="image", Y=Y$Y[,,w], id=Y$id[w]))
       impur <- impur + imp[[i]]*prop
     }
 
     if (Y$type=="shape"){
-      w <- which(split==i)
+      w <- NULL
+      for (j in 1:length(fils)){
+        w <- c(w, which(Y$id==fils[j]))
+      }
       if (length(w)>1){imp[[i]] <- impurity(list(type=Y$type,Y=Y$Y[,,w],id=Y$id[w]))
       impur <- impur + imp[[i]]*prop}
       else {imp[[i]] <- 0}
     }
 
     if (Y$type=="scalar" || Y$type=="factor") {
-      w <- which(split==i)
+      w <- NULL
+      for (j in 1:length(fils)){
+        w <- c(w, which(Y$id==fils[j]))
+      }
       imp[[i]] <- impurity(list(type=Y$type,Y=Y$Y[w],id=Y$id[w]))
       impur <- impur + imp[[i]]*prop
     }
@@ -196,7 +201,7 @@ impurity_split <- function(Y,split,centers=NULL,timeScale=0.1){
 #' @import RiemBase
 #'
 #' @keywords internal
-ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
+ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
   impur <- rep(0,dim(X$X)[length(dim(X$X))])
   toutes_imp <- list()
@@ -208,37 +213,21 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
     if (X$type=="factor"){
 
       if (length(unique(X$X[,i]))>1){
-        ### Il faut regarder ntry fois les éléments ::
         L <- Fact.partitions(X$X[,i],X$id)
         split_courant <- list()
         impur_courant <- rep(NA,length(L))
         toutes_imp_courant <- list()
 
-        # On tire une partition au hasard, il faut vérifier les différentes partitions
-
-        if (length(L)<= ntry) tirage <- c(1:length(L))
-        else tirage <- sample(1:length(L), 1)
-
+        # On tire une partition au hasard
+        tirage <- sample(1:length(L), 1)
         # Il faut maintenant regarder quelles sont les meilleures combinaisons ::
-        split_prime <- matrix(2,length(tirage),length(X$id))
-        imp <- rep(NA,length(tirage))
-        dec <- list()
-        for (l in 1:length(tirage)){
-          for (k in L[[tirage[l]]]){
-            split_prime[l,which(X$id==k)] <- 1
-          }
-          dec[[l]] <- impurity_split(Y,split_prime[l,])
-          imp[l] <- dec[[l]]$impur
+
+        split[[i]] <- rep(2,length(X$id))
+        for (l in L[[tirage]]){
+          split[[i]][which(X$id==l)] <- 1
         }
-
-        split[[i]] <- split_prime[which.min(imp),]
-
-        #split[[i]] <- rep(2,length(X$id))
-        #for (l in L[[tirage]]){
-        #  split[[i]][which(X$id==l)] <- 1
-        #}
         # Il faut maintenant regarder la qualité du découpage ::
-        impurete <- dec[[which.min(imp)]]
+        impurete <- impurity_split(Y,split[[i]])
         impur[i] <- impurete$impur
         toutes_imp[[i]] <- impurete$imp_list
       }
@@ -280,10 +269,10 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
         if (length(unique(split_prime[c,]))>1){
           u <- u+1
           qui <- c(qui, c)
-          if (fast==TRUE) impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,],centers=id_centers[c,], timeScale=timeScale)
-          else impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,], timeScale=timeScale)
+          impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
           imp <- c(imp,impurete2[[c]]$impur)
         }
+
       }
 
       if (u>0){
@@ -325,8 +314,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
           if (length(split_prime[c,])>1){
             u <- u+1
             qui <- c(qui,c)
-            if (fast==TRUE) impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,], centers = id_centers[c,], timeScale=timeScale)
-            else impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,], timeScale=timeScale)
+            impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
             imp <- c(imp, impurete2[[c]]$impur)
           }
         }
@@ -350,7 +338,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
 
       else{
         split[[i]] <- c(1,2)
-        impurete <- impurity_split(Y=Y,split=split[[i]], timeScale=timeScale)
+        impurete <- impurity_split(Y,split[[i]], timeScale)
         impur[i] <- impurete$impur
         toutes_imp[[i]] <- impurete$imp_list
       }
@@ -386,8 +374,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
           if (length(unique(split_prime[c,]))>1){
             u <-u+1
             qui <- c(qui,c)
-            if (fast==TRUE) impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,],centers=id_centers[c,], timeScale=timeScale)
-            else impurete2[[c]] <- impurity_split(Y=Y,split=split_prime[c,], timeScale=timeScale)
+            impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
             imp <- c(imp,impurete2[[c]]$impur)
           }
 
@@ -397,7 +384,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
 
         if (u>0){
           gagnant <- qui[which.min(imp)]
-          split <- split_prime[gagnant,]
+          split[[i]] <- split_prime[gagnant,]
           impurete <- impurete2[[gagnant]]
           impur[i] <- impurete$impur
           toutes_imp[[i]] <- impurete$imp_list
@@ -424,11 +411,9 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
         ### On doit tier les centres
         #centers <- sample(X$X[,i],2)
 
-        id_centers <- matrix(NA,ntry,2)
-        centres <- matrix(NA,ntry,2)
+        centers <- matrix(NA,ntry,2)
         for (l in 1:ntry){
-          id_centers[l,] <- sample(X$id,2)
-          centres[l,] <- c(X$X[which(X$id==id_centers[l,1]),i],X$X[which(X$id==id_centers[l,2]),i])
+          centers[l,] <- sample(X$X[,i],2)
         }
 
         #split[[i]] <- rep(2,length(X$X[,i]))
@@ -436,7 +421,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
 
         for (l in 1:length(X$X[,i])){
           for (k in 1:ntry){
-            if (abs(centres[k,1]-X$X[l,i])<= abs(centres[k,2]-X$X[l,i])) split_prime[k,l] <- 1
+            if (abs(centers[k,1]-X$X[l,i])<= abs(centers[k,2]-X$X[l,i])) split_prime[k,l] <- 1
           }
         }
 
@@ -448,8 +433,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
           if (length(unique(split_prime[k,]))>1){
             u <- u+1
             qui <- c(qui,k)
-            if (fast==TRUE) impurete2[[k]] <- impurity_split(Y,split_prime[k,],centers = id_centers[k,], timeScale=timeScale)
-            else impurete2[[k]] <- impurity_split(Y,split_prime[k,],centers=NULL, timeScale=timeScale)
+            impurete2[[k]] <- c(impurete2,impurity_split(Y,split_prime[k,], timeScale))
             imp <- c(imp, impurete2[[k]]$impur)
           }
         }
@@ -1387,7 +1371,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 #' @import geomorph
 #'
 #' @keywords internal
-Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,aligned.shape=FALSE,ntry=3,fast=FALSE, timeScale=0.1, ...){
+Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,aligned.shape=FALSE,ntry=3, timeScale=0.1, ...){
 
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
@@ -1397,40 +1381,28 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
     str_sub(Inputs[k],1,1) <- str_to_upper(str_sub(Inputs[k],1,1))
   }
 
-  #N <- length(unique(Y$id)) ## Le nombre total d'individus
-
-   ### Il faut ici trouver une bonne structure:
-
-
+  impurity_feuilles <- NULL
+  V_split <- NULL
   hist_nodes <- list()
   id_boot <- unique(sample(unique(Y$id), length(unique(Y$id)), replace=TRUE))
-
-  N <- length(id_boot) ## Nombre d'éléments dedans
-  V_split <- matrix(NA,N-1,3) ### ok pour la taille max -1
-
+  boot <- id_boot
   decoupe <- 1
 
-  # wXCurve <- NULL
-  # wXScalar <- NULL
-  # wXFactor <- NULL
-  # wXShape <- NULL
-  # wXImage <- NULL
+  wXCurve <- NULL
+  wXScalar <- NULL
+  wXFactor <- NULL
+  wXShape <- NULL
+  wXImage <- NULL
+  wY <- NULL
 
-  wY <- which(Y$id %in% id_boot)
-  if (is.element("curve",inputs)==TRUE) wXCurve <- which(Curve$id %in% id_boot)
-  if (is.element("scalar",inputs)==TRUE) wXScalar <- which(Scalar$id %in% id_boot)
-  if (is.element("factor",inputs)==TRUE) wXFactor <- which(Factor$id %in% id_boot)
-  if (is.element("shape",inputs)==TRUE) wXShape <- which(Shape$id %in% id_boot)
-  if (is.element("image",inputs)==TRUE) wXImage <- which(Image$id %in% id_boot)
-
-  # for (k in id_boot){
-  #   wY <- c(wY, which(Y$id==k))
-  #   if (is.element("curve",inputs)==TRUE) wXCurve <- c(wXCurve, which(Curve$id==k))
-  #   if (is.element("scalar",inputs)==TRUE) wXScalar <- c(wXScalar, which(Scalar$id==k))
-  #   if (is.element("factor",inputs)==TRUE) wXFactor <- c(wXFactor, which(Factor$id==k))
-  #   if (is.element("shape",inputs)==TRUE) wXShape <- c(wXShape, which(Shape$id==k))
-  #   if (is.element("image",inputs)==TRUE) wXImage <- c(wXImage, which(Image$id==k))
-  # }
+  for (k in id_boot){
+    wY <- c(wY, which(Y$id==k))
+    if (is.element("curve",inputs)==TRUE) wXCurve <- c(wXCurve, which(Curve$id==k))
+    if (is.element("scalar",inputs)==TRUE) wXScalar <- c(wXScalar, which(Scalar$id==k))
+    if (is.element("factor",inputs)==TRUE) wXFactor <- c(wXFactor, which(Factor$id==k))
+    if (is.element("shape",inputs)==TRUE) wXShape <- c(wXShape, which(Shape$id==k))
+    if (is.element("image",inputs)==TRUE) wXImage <- c(wXImage, which(Image$id==k))
+  }
 
   Y_pred <- list()
 
@@ -1445,22 +1417,18 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
   if (Y$type=="image" || Y$type=="shape") {Y_boot <- list(type=Y$type, Y=Y$Y[,,wY], id=Y$id[wY])}
   if (Y$type=="factor" || Y$type=="scalar") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY])}
 
-  impurete <- rep(NA, N)
-  impurete[1] <- impurity(Y_boot, timeScale=timeScale) #### impureté dans l'échantillon de départ
+  impurete <- impurity(Y_boot, timeScale=timeScale) #### impuretÃ© dans l'ech boot au dÃ©part
   imp_nodes <- list()
-  imp_nodes[[1]] <- impurete[1]
+  imp_nodes[[1]] <- impurete
 
   id_feuille <- rep(1,length(Y_boot$id)) #### localisation des feuilles de l'arbre
   id_feuille_prime <- id_feuille
-  hist_imp_nodes <- matrix(NA,1 + 2*(N-1),3)
-  nhist <- 0
-  nsplit <- 0
+  hist_imp_nodes <- NULL
 
   for (p in 1:(length(unique(Y_boot$id))/2-1)){
     count_split <- 0
     for (i in 1:length(unique(id_feuille))){
       # Il faut que l'on regarde le tirage des variables de manière aléatoire :
-      ## Il nous faut absolument optimiser ce code à la con
       V <- NULL
       for (v in Inputs){
         V <- c(V, rep(get(v)$type,dim(get(v)$X)[length(dim(get(v)$X))]))
@@ -1471,37 +1439,25 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
       # variables <- sample(c(1:dim(X_boot$X[,,drop=FALSE])[2]),mtry)
       w <- which(id_feuille==unique(id_feuille)[i])
-      #wXCurve <- NULL
-      #wXScalar <- NULL
-      #wXFactor <- NULL
-      #wXShape <- NULL
-      #wXImage <- NULL
+      wXCurve <- NULL
+      wXScalar <- NULL
+      wXFactor <- NULL
+      wXShape <- NULL
+      wXImage <- NULL
 
-      #for (l in unique(Y_boot$id[w])){
-      #  if (is.element("curve",inputs)==TRUE) wXCurve <- c(wXCurve, which(Curve_boot$id==l))
-      #  if (is.element("scalar",inputs)==TRUE) wXScalar <- c(wXScalar, which(Scalar_boot$id==l))
-      #  if (is.element("factor",inputs)==TRUE) wXFactor <- c(wXFactor, which(Factor_boot$id==l))
-      #  if (is.element("shape",inputs)==TRUE) wXShape <- c(wXShape, which(Shape_boot$id==l))
-      #  if (is.element("image",inputs)==TRUE) wXImage <- c(wXImage, which(Image_boot$id==l))
-      # }
-
-      if (is.element("curve",inputs)==TRUE) wXCurve <- which(Curve_boot$id %in% unique(Y_boot$id[w]))
-      if (is.element("scalar",inputs)==TRUE) wXScalar <- which(Scalar_boot$id %in% unique(Y_boot$id[w]))
-      if (is.element("factor",inputs)==TRUE) wXFactor <- which(Factor_boot$id %in% unique(Y_boot$id[w]))
-      if (is.element("shape",inputs)==TRUE) wXShape <- which(Shape_boot$id %in% unique(Y_boot$id[w]))
-      if (is.element("image",inputs)==TRUE) wXImage <-  which(Image_boot$id %in% unique(Y_boot$id[w]))
+      for (l in unique(Y_boot$id[w])){
+        if (is.element("curve",inputs)==TRUE) wXCurve <- c(wXCurve, which(Curve_boot$id==l))
+        if (is.element("scalar",inputs)==TRUE) wXScalar <- c(wXScalar, which(Scalar_boot$id==l))
+        if (is.element("factor",inputs)==TRUE) wXFactor <- c(wXFactor, which(Factor_boot$id==l))
+        if (is.element("shape",inputs)==TRUE) wXShape <- c(wXShape, which(Shape_boot$id==l))
+        if (is.element("image",inputs)==TRUE) wXImage <- c(wXImage, which(Image_boot$id==l))
+      }
 
       if (length(unique(Y_boot$id[w]))>1 & imp_nodes[[unique(id_feuille)[i]]] >0){
 
         if (length(which(hist_imp_nodes[,1]==unique(id_feuille)[i]))==0){
-          if (Y_boot$type=="curve"){
-            nhist <- nhist +1
-            hist_imp_nodes[nhist,] <- c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id,time=Y_boot$time),timeScale=timeScale), length(unique(Y_boot$id[w])))
-          }
-          else {
-            nhist <- nhist+1
-            hist_imp_nodes[nhist, ] <- c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id),timeScale=timeScale), length(unique(Y_boot$id[w])))
-          }
+          if (Y_boot$type=="curve"){hist_imp_nodes <- rbind(hist_imp_nodes, c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id,time=Y_boot$time),timeScale=timeScale), length(unique(Y_boot$id[w]))))}
+          else {hist_imp_nodes <- rbind(hist_imp_nodes, c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id),timeScale=timeScale), length(unique(Y_boot$id[w]))))}
         }
 
         # On est ici
@@ -1545,9 +1501,8 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         }
 
 
-        F_SPLIT <- matrix(Inf, mtry,2)
+        F_SPLIT <- NULL
         decoupe <- 0
-        elem <- 1
 
         if (is.element("factor",split.spaces)==TRUE){
 
@@ -1555,12 +1510,11 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Factor <- var_split(Factor_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Factor <- ERvar_split(Factor_courant,Y_courant,timeScale,ntry = ntry, fast = fast)}
+          else{feuille_split_Factor <- ERvar_split(Factor_courant,Y_courant,timeScale,ntry = ntry)}
 
           if (feuille_split_Factor$Pure==FALSE){
-            F_SPLIT[elem,] <- c("Factor",feuille_split_Factor$impurete)
+            F_SPLIT <- rbind(F_SPLIT,c("Factor",feuille_split_Factor$impurete))
             decoupe <- decoupe +1
-            elem <- elem +1
           }
         }
 
@@ -1570,12 +1524,11 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Curve <- var_split(Curve_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Curve <- ERvar_split(Curve_courant,Y_courant,timeScale, ntry=ntry, fast=fast)}
+          else{feuille_split_Curve <- ERvar_split(Curve_courant,Y_courant,timeScale, ntry=ntry)}
 
           if (feuille_split_Curve$Pure==FALSE){
-            F_SPLIT[elem,] <- c("Curve",feuille_split_Curve$impurete)
+            F_SPLIT <- rbind(F_SPLIT,c("Curve",feuille_split_Curve$impurete))
             decoupe <- decoupe +1
-            elem <- elem+1
           }
         }
 
@@ -1585,12 +1538,11 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             feuille_split_Scalar <- var_split(Scalar_courant,Y_courant,timeScale)
           }
 
-          else{feuille_split_Scalar <- ERvar_split(Scalar_courant,Y_courant,timeScale, ntry=ntry, fast=fast)}
+          else{feuille_split_Scalar <- ERvar_split(Scalar_courant,Y_courant,timeScale, ntry=ntry)}
 
           if (feuille_split_Scalar$Pure==FALSE){
-            F_SPLIT[elem,] <- c("Scalar",feuille_split_Scalar$impurete)
+            F_SPLIT <- rbind(F_SPLIT,c("Scalar",feuille_split_Scalar$impurete))
             decoupe <- decoupe +1
-            elem <- elem+1
           }
 
 
@@ -1598,13 +1550,12 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
         if (is.element("shape",split.spaces)==TRUE){
 
-          feuille_split_Shape <- ERvar_split(Shape_courant,Y_courant,timeScale, ntry=ntry, fast=fast)
+          feuille_split_Shape <- ERvar_split(Shape_courant,Y_courant,timeScale, ntry=ntry)
 
 
           if (feuille_split_Shape$Pure==FALSE){
-            F_SPLIT[elem,] <- c("Shape",feuille_split_Shape$impurete)
+            F_SPLIT <- rbind(F_SPLIT,c("Shape",feuille_split_Shape$impurete))
             decoupe <- decoupe +1
-            elem <- elem+1
           }
 
         }
@@ -1612,13 +1563,13 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
         if (is.element("image",split.spaces)==TRUE){
 
-          feuille_split_Image <- ERvar_split(Image_courant,Y_courant,timeScale, ntry=ntry, fast=fast)
+          feuille_split_Image <- ERvar_split(Image_courant,Y_courant,timeScale, ntry=ntry)
 
           if (feuille_split_Image$Pure==FALSE){
-            F_SPLIT[elem,] <- c("Image",feuille_split_Image$impurete)
+            F_SPLIT <- rbind(F_SPLIT,c("Image",feuille_split_Image$impurete))
             decoupe <- decoupe +1
-            elem <- elem+1
           }
+
         }
 
 
@@ -1643,36 +1594,26 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           imp_nodes[[2*unique(id_feuille)[i]]] <- feuille_split$impur_list[[1]]
           imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
 
+          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i],feuille_split$impur_list[[1]], length(which(feuille_split$split==1))))
+          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i]+1,feuille_split$impur_list[[2]], length(which(feuille_split$split==2))))
 
-          nhist <- nhist+2
-          hist_imp_nodes[nhist-1,] <- c(2*unique(id_feuille)[i],feuille_split$impur_list[[1]], length(which(feuille_split$split==1)))
-          hist_imp_nodes[nhist,] <- c(2*unique(id_feuille)[i]+1,feuille_split$impur_list[[2]], length(which(feuille_split$split==2)))
+          V_split <- rbind(V_split,c(TYPE,unique(id_feuille)[i],vsplit_space))
 
-
-          nsplit <- nsplit+1
-          V_split[nsplit,] <- c(TYPE,unique(id_feuille)[i],vsplit_space)
-
-
-          # wY_gauche <- NULL
-          # wY_droit <- NULL
-          # w_gauche <- NULL
-          # w_droit <- NULL
+          wY_gauche <- NULL
+          wY_droit <- NULL
+          w_gauche <- NULL
+          w_droit <- NULL
 
 
-          # for (k in 1:length(gauche_id)){
-          #   w_gauche <- c(w_gauche, which(X_boot$id==gauche_id[k]))
-          #   wY_gauche <- c(wY_gauche, which(Y_boot$id==gauche_id[k]))
-          # }
-          #
-          # for (k in 1:length(droit_id)){
-          #   w_droit <- c(w_droit, which(X_boot$id==droit_id[k]))
-          #   wY_droit <- c(wY_droit, which(Y_boot$id==droit_id[k]))
-          # }
+          for (k in 1:length(gauche_id)){
+            w_gauche <- c(w_gauche, which(X_boot$id==gauche_id[k]))
+            wY_gauche <- c(wY_gauche, which(Y_boot$id==gauche_id[k]))
+          }
 
-          w_gauche <- which(X_boot$id %in% gauche_id)
-          wY_gauche <- which(Y_boot$id %in% gauche_id)
-          w_droit <- which(X_boot$id %in% droit_id)
-          wY_droit <- which(Y_boot$id %in% droit_id)
+          for (k in 1:length(droit_id)){
+            w_droit <- c(w_droit, which(X_boot$id==droit_id[k]))
+            wY_droit <- c(wY_droit, which(Y_boot$id==droit_id[k]))
+          }
 
 
           id_feuille_prime[wY_gauche] <- 2*(unique(id_feuille)[i])
@@ -1683,8 +1624,8 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           if (X$type=="curve"){
             trajG <- as.data.frame(cbind(X_boot$id[w_gauche], X_boot$time[w_gauche], X_boot$X[w_gauche,vsplit_space]))
             trajD <- as.data.frame(cbind(X_boot$id[w_droit], X_boot$time[w_droit], X_boot$X[w_droit,vsplit_space]))
-            meanFg <- kmlShape::meanFrechet(trajG)
-            meanFd <- kmlShape::meanFrechet(trajD)
+            meanFg <- as.matrix(kmlShape::meanFrechet(trajG))
+            meanFd <- as.matrix(kmlShape::meanFrechet(trajD))
           }
 
           if (X$type=="shape"){
@@ -1717,7 +1658,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
           feuilles_courantes <- unique(id_feuille_prime)
           info_feuilles <- hist_imp_nodes[is.element(hist_imp_nodes[,1], feuilles_courantes),]
-          impurete[nsplit] <- sum(info_feuilles[,2]*info_feuilles[,3]/N)
+          impurete <- c(impurete, sum(info_feuilles[,2]*info_feuilles[,3]/length(unique(Y_boot$id))))
         }
 
 
@@ -1755,9 +1696,9 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
       }
       if (Y$type=="factor"){
         Ylevels <- unique(Y_boot$Y)
-        return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split[1:nsplit,], impurity=impurete[1:nsplit], hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes[1:nhist,], boot=id_boot, Ylevels=Ylevels))
+        return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes, boot=boot, Ylevels=Ylevels))
       }
-      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split[1:nsplit,], impurity=impurete[1:nsplit], hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes[1:nhist,],boot=id_boot))
+      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes,boot=boot))
     }
   }
 
@@ -1791,9 +1732,9 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
   }
   if (Y$type=="factor"){
     Ylevels <- unique(Y_boot$Y)
-    return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split[1:nsplit,], impurity=impurete[1:nsplit], hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes[1:nhist,], Ylevels=Ylevels, boot=id_boot))
+    return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes, Ylevels=Ylevels, boot=boot))
   }
-  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split[1:nsplit,], impurity=impurete[1:nsplit], hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, hist_imp_nodes=hist_imp_nodes[1:nhist,], boot=id_boot))
+  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, hist_imp_nodes=hist_imp_nodes, boot=boot))
 }
 
 
@@ -1821,13 +1762,13 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 #' @import pbapply
 #'
 #' @keywords internal
-rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE, aligned.shape=FALSE,ntry=3,fast=FALSE,timeScale=0.1, ...){
+rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE, aligned.shape=FALSE,ntry=3,timeScale=0.1, ...){
 
   cl <- parallel::makeCluster(ncores)
   doParallel::registerDoParallel(cl)
 
   trees <- pbsapply(1:ntree, FUN=function(i){
-    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT, aligned.shape=aligned.shape,ntry=ntry,fast = fast,timeScale=timeScale, ...)
+    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT, aligned.shape=aligned.shape,ntry=ntry,timeScale=timeScale, ...)
   },cl=cl)
 
   parallel::stopCluster(cl)
@@ -2457,7 +2398,6 @@ permutation_shapes <- function(Shapes, id){
 #' @param ntry [numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.
 #' @param timeScale [numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.
 #' @param imp [logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)
-#' @param fast [logical]: TRUE perform an acceleration blabla....
 #' @param ... : optional parameters to be passed to the low level function
 #'
 #' @import stringr
@@ -2476,7 +2416,7 @@ permutation_shapes <- function(Shapes, id){
 #' }
 #' @export
 #'
-FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE,fast=FALSE, ...){
+FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, ...){
 
 
   ### On va regarder les différentes entrées:
@@ -2538,7 +2478,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   print("Building the maximal Frechet trees...")
 
   debut <- Sys.time()
-  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE, fast = fast)
+  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE)
   temps <- Sys.time() - debut
 
 
@@ -2570,7 +2510,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y=Y, timeScale=timeScale)
 
   if (imp == FALSE){
-    var.ini <- impurity(Y=Y,center = NULL, timeScale=timeScale)
+    var.ini <- impurity(Y, timeScale)
     varex <- 1 - mean(oob.err$err)/var.ini
     frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels, xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, varex=varex, size=size, time=temps)
     class(frf) <- c("FrechForest")
