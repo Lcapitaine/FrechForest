@@ -397,7 +397,7 @@ ERvar_split <- function(X ,Y,ntry=3,fast=FALSE ,timeScale=0.1){
 
         if (u>0){
           gagnant <- qui[which.min(imp)]
-          split[[i]] <- split_prime[gagnant,]
+          split <- split_prime[gagnant,]
           impurete <- impurete2[[gagnant]]
           impur[i] <- impurete$impur
           toutes_imp[[i]] <- impurete$imp_list
