@@ -6,7 +6,8 @@
 \usage{
 rf_shape_para(Curve = NULL, Scalar = NULL, Factor = NULL,
   Shape = NULL, Image = NULL, Y, mtry, ntree, ncores, ERT = FALSE,
-  aligned.shape = FALSE, ntry = 3, timeScale = 0.1, ...)
+  aligned.shape = FALSE, ntry = 3, fast = FALSE, timeScale = 0.1,
+  ...)
 }
 \arguments{
 \item{...}{}

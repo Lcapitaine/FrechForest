@@ -4,10 +4,10 @@
 \alias{impurity}
 \title{Impurity}
 \usage{
-impurity(Y, timeScale = 0.1)
+impurity(Y, center = NULL, timeScale = 0.1)
 }
 \arguments{
-\item{timeScale}{}
+\item{center}{}
 }
 \description{
 Compute the impurity of a given vector

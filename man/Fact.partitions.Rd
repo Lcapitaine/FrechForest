@@ -10,6 +10,7 @@ Fact.partitions(Factor, id)
 \item{id}{}
 }
 \description{
-This function is used to find all the unique partitions of k factors into 2 groups
+This function is used to find all the unique partitions of k factors into 2 groups, can be used up to
+13 different factors
 }
 \keyword{internal}

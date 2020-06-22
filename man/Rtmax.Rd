@@ -6,7 +6,7 @@
 \usage{
 Rtmax(Curve = NULL, Scalar = NULL, Factor = NULL, Shape = NULL,
   Image = NULL, Y, mtry, ERT = FALSE, aligned.shape = FALSE,
-  ntry = 3, timeScale = 0.1, ...)
+  ntry = 3, fast = FALSE, timeScale = 0.1, ...)
 }
 \arguments{
 \item{Curve}{[list]:}

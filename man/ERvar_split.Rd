@@ -4,7 +4,7 @@
 \alias{ERvar_split}
 \title{Extremely randomized split}
 \usage{
-ERvar_split(X, Y, ntry = 3, timeScale = 0.1)
+ERvar_split(X, Y, ntry = 3, fast = FALSE, timeScale = 0.1)
 }
 \arguments{
 \item{ntry}{}
