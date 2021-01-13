@@ -4,8 +4,16 @@
 \alias{OOB.rfshape}
 \title{OOB for random Forest}
 \usage{
-OOB.rfshape(rf, Curve = NULL, Scalar = NULL, Factor = NULL,
-  Shape = NULL, Image = NULL, Y, timeScale = 0.1)
+OOB.rfshape(
+  rf,
+  Curve = NULL,
+  Scalar = NULL,
+  Factor = NULL,
+  Shape = NULL,
+  Image = NULL,
+  Y,
+  timeScale = 0.1
+)
 }
 \arguments{
 \item{timeScale}{}

@@ -1,3 +1,19 @@
+#' Arabidopsis QTL data on gravitropism
+#'
+#' Data from a QTL experiment on gravitropism in
+#' Arabidopsis, with data on 162 recombinant inbred lines (Ler x
+#' Cvi). The outcome is the root tip angle (in degrees) at two-minute
+#' increments over eight hours.
+#'
+#' @docType data
+#'
+#' @usage data(Part.facts)
+#'
+#' @keywords datasets
+#' @keywords internal
+"Part.facts"
+
+
 #' Read the parameters of the function
 #'
 #' @param z
@@ -14,6 +30,7 @@ read.Xarg <- function(z){
   return(type)
 }
 
+
 #' Factor partitions finder
 #'
 #' This function is used to find all the unique partitions of k factors into 2 groups
@@ -21,18 +38,11 @@ read.Xarg <- function(z){
 #' @param Factor
 #' @param id
 #'
-#' @import salso
-#'
 #' @keywords internal
 Fact.partitions <- function(Factor, id){
 
   U <- unique(Factor)
-  M <- enumerate.partitions(length(U))
-  w <- NULL
-  for (l in 1:nrow(M)){
-    if(length(which(M[l,]>1))>0) w<- c(w,l)
-  }
-  P <- M[-c(1,w),, drop=FALSE]
+  P <- Part.facts[[length(U)]]
   L <- list()
   for (k in 1:nrow(P)){
     w <- which(P[k,]==0)
@@ -1619,7 +1629,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           id_feuille_prime[wY_gauche] <- 2*(unique(id_feuille)[i])
           id_feuille_prime[wY_droit] <- 2*(unique(id_feuille)[i])+1
 
-          print(paste("Split on the variable", vsplit_space, "on the space of ", paste(TYPE,"s",sep="")))
+          #print(paste("Split on the variable", vsplit_space, "on the space of ", paste(TYPE,"s",sep="")))
 
           if (X$type=="curve"){
             trajG <- as.data.frame(cbind(X_boot$id[w_gauche], X_boot$time[w_gauche], X_boot$X[w_gauche,vsplit_space]))

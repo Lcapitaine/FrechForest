@@ -7,6 +7,6 @@ Depends: R (>= 3.6.0)
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
-Imports: stats, kmlShape, foreach, doParallel, graphics, stringr, salso, RiemBase, geomorph, Evomorph, DescTools, parallel, pbapply
+RoxygenNote: 7.1.1
+Imports: stats, kmlShape, foreach, doParallel, graphics, stringr, RiemBase, geomorph, Evomorph, DescTools, parallel, pbapply
 Suggests: testthat (>= 2.1.0)

@@ -4,9 +4,20 @@
 \alias{Rtmax}
 \title{Randomized Frechet tree}
 \usage{
-Rtmax(Curve = NULL, Scalar = NULL, Factor = NULL, Shape = NULL,
-  Image = NULL, Y, mtry, ERT = FALSE, aligned.shape = FALSE,
-  ntry = 3, timeScale = 0.1, ...)
+Rtmax(
+  Curve = NULL,
+  Scalar = NULL,
+  Factor = NULL,
+  Shape = NULL,
+  Image = NULL,
+  Y,
+  mtry,
+  ERT = FALSE,
+  aligned.shape = FALSE,
+  ntry = 3,
+  timeScale = 0.1,
+  ...
+)
 }
 \arguments{
 \item{Curve}{[list]:}

@@ -4,9 +4,17 @@
 \alias{predict.FrechForest}
 \title{Predict with Frechet random forests}
 \usage{
-\method{predict}{FrechForest}(object, Curve = NULL, Scalar = NULL,
-  Factor = NULL, Shape = NULL, Image = NULL, aligned.shape = FALSE,
-  timeScale = 0.1, ...)
+\method{predict}{FrechForest}(
+  object,
+  Curve = NULL,
+  Scalar = NULL,
+  Factor = NULL,
+  Shape = NULL,
+  Image = NULL,
+  aligned.shape = FALSE,
+  timeScale = 0.1,
+  ...
+)
 }
 \arguments{
 \item{object}{: Frechet random forest}
@@ -26,6 +34,9 @@
 \item{timeScale}{[numeric]:}
 
 \item{...}{: optional parameters to be passed to the low level function}
+}
+\value{
+
 }
 \description{
 Predict with Frechet random forests

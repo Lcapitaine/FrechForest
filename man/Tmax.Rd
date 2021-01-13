@@ -4,8 +4,16 @@
 \alias{Tmax}
 \title{Maximal Fréchet tree}
 \usage{
-Tmax(Curve = NULL, Scalar = NULL, Factor = NULL, Shape = NULL,
-  Image = NULL, Y, timeScale = 0.1, ...)
+Tmax(
+  Curve = NULL,
+  Scalar = NULL,
+  Factor = NULL,
+  Shape = NULL,
+  Image = NULL,
+  Y,
+  timeScale = 0.1,
+  ...
+)
 }
 \arguments{
 \item{Curve}{[list]:}

@@ -4,9 +4,22 @@
 \alias{rf_shape_para}
 \title{Parallelized Frechet random Forest}
 \usage{
-rf_shape_para(Curve = NULL, Scalar = NULL, Factor = NULL,
-  Shape = NULL, Image = NULL, Y, mtry, ntree, ncores, ERT = FALSE,
-  aligned.shape = FALSE, ntry = 3, timeScale = 0.1, ...)
+rf_shape_para(
+  Curve = NULL,
+  Scalar = NULL,
+  Factor = NULL,
+  Shape = NULL,
+  Image = NULL,
+  Y,
+  mtry,
+  ntree,
+  ncores,
+  ERT = FALSE,
+  aligned.shape = FALSE,
+  ntry = 3,
+  timeScale = 0.1,
+  ...
+)
 }
 \arguments{
 \item{...}{}
