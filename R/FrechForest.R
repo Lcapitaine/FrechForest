@@ -133,7 +133,7 @@ impurity <- function(Y, timeScale=0.1){
 #' @param split
 #' @param timeScale
 #'
-#'
+#' @import survival
 #' @keywords internal
 impurity_split <- function(Y,split,timeScale=0.1){
   impur <- 0
@@ -176,6 +176,17 @@ impurity_split <- function(Y,split,timeScale=0.1){
       }
       imp[[i]] <- impurity(list(type=Y$type,Y=Y$Y[w],id=Y$id[w]))
       impur <- impur + imp[[i]]*prop
+    }
+
+    if (Y$type == "surv"){
+
+      tryCatch({
+        sp=NULL
+        for (i in 1:length(split)){
+          sp = c(sp, rep(split[i],length(which(Y$id==unique(Y$id)[i]))))
+        }
+        impur= 1/(1+survdiff(Surv(Y$time,Y$Y)~sp)$chisq)}, error = function(sp){impur=Inf})
+
     }
   }
   return(list(impur=impur, imp_list=imp))
@@ -572,6 +583,7 @@ var_split <- function(X ,Y,timeScale=0.1){
 #' @import stringr
 #' @import Evomorph
 #' @import geomorph
+#' @import survival
 #'
 #' @keywords internal
 #'
@@ -611,12 +623,15 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
   id_feuille_prime <- id_feuille
   V_split <- NULL
   hist_nodes <- list()
-  hist_imp_nodes <- NULL
   decoupe <- 1
-
-  impurete <- impurity(Y, timeScale)
   imp_nodes <- list()
-  imp_nodes[[1]] <- impurete
+  imp_nodes[[1]] = Inf
+  impurete = Inf
+  if (Y$type!="surv"){
+    impurete <- impurity(Y, timeScale)
+    imp_nodes[[1]] <- impurete
+  }
+
   Y_pred <- list()
   Y_pred_imputation <- list()
   hist_imp_nodes <- as.matrix(cbind(1, impurete,length(unique(Y$id))))
@@ -655,6 +670,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
         if(Y$type=="factor" || Y$type=="scalar"){Y_courant <- list(type=Y$type, Y=Y$Y[w_Y], id=Y$id[w_Y])}
         if (Y$type=="shape") { Y_courant <- list(type="shape",Y=Y$Y[,,w_Y], id=Y$id[w_Y])}
         if (Y$type=="image"){Y_courant <- list(type="image",Y=Y$Y[,,w_Y], id=Y$id[w_Y])}
+        if (Y$type=="surv"){Y_courant <- list(type="surv", Y=Y$Y[w_Y], id=Y$id[w_Y], time=Y$time[w_Y])}
 
         # Il nous faut maintenant faire le split sur toutes les différents types :
 
@@ -692,9 +708,6 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
 
           feuille_split <- get(paste("feuille_split_",TYPE, sep="")) ####  renvoie l'impurete ainsi que le split ? gauche et a droite
 
-          imp_avant_split <- imp_nodes[[unique(id_feuille)[i]]]
-          imp_apres_split <- feuille_split$impurete
-
           #if (imp_apres_split<imp_avant_split){
 
           if (Y$type=="curve"){
@@ -718,13 +731,23 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
             Y_pred[[unique(id_feuille)[i]]] <- rbase.mean(donnees)$x
           }
 
-          imp_nodes[[2*unique(id_feuille)[i]]] <- feuille_split$impur_list[[1]]
-          imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
+          if (Y$type=="surv"){
+            donnees = survfit(Surv(Y$time[w_Y], Y$Y[w_Y])~1)
+            Y_pred[[unique(id_feuille)[i]]] <- data.frame(times=donnees$time, traj=donnees$surv)
+          }
+
+          if (Y$type=="surv"){
+            imp_nodes[[2*unique(id_feuille)[i]]] <- Inf
+            imp_nodes[[2*unique(id_feuille)[i]+1]] <- Inf
+          }
+          else {
+            imp_nodes[[2*unique(id_feuille)[i]]] <- feuille_split$impur_list[[1]]
+            imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
+          }
 
 
-          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i],feuille_split$impur_list[[1]], length(which(feuille_split$split==1))))
-          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i]+1,feuille_split$impur_list[[2]], length(which(feuille_split$split==2))))
-
+          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i],imp_nodes[[2*unique(id_feuille)[i]]], length(which(feuille_split$split==1))))
+          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i]+1,imp_nodes[[2*unique(id_feuille)[i]+1]], length(which(feuille_split$split==2))))
 
 
           gauche_id <- unique(Y$id[w_Y])[which(feuille_split$split==1)]
@@ -840,6 +863,11 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
     if (Y$type=="image"){
       donnees <- riemfactory(Y$Y[,,w, drop=FALSE])
       Y_pred[[q]] <- rbase.mean(donnees)$x
+    }
+
+    if (Y$type=="surv"){
+      donnees = survfit(Surv(Y$time[w], Y$Y[w])~1)
+      Y_pred[[q]] <- data.frame(times=donnees$time, traj=donnees$surv)
     }
   }
   if (Y$type=="factor"){
@@ -1331,7 +1359,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 
     }
 
-    if(tree$Y$type=="curve" || tree$Y$type=="image" || tree$Y$type=="shape"){
+    if(tree$Y$type=="curve" || tree$Y$type=="image" || tree$Y$type=="shape" || tree$Y$type=="surv"){
       pred[i] <- noeud_courant
     }
 
@@ -1363,6 +1391,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 #' @import stringr
 #' @import Evomorph
 #' @import geomorph
+#' @import survival
 #'
 #' @keywords internal
 Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,aligned.shape=FALSE,ntry=3, timeScale=0.1, ...){
@@ -1407,17 +1436,21 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
   if (is.element("image",inputs)==TRUE) Image_boot <- list(type=Image$type,   X=Image$X[,,wXImage, , drop=FALSE], id= Image$id[wXImage])
 
 
-  if (Y$type=="curve") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY], time=Y$time[wY])} ### idem pour Y
+  if (Y$type=="curve" || Y$type=="surv") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY], time=Y$time[wY])} ### idem pour Y
   if (Y$type=="image" || Y$type=="shape") {Y_boot <- list(type=Y$type, Y=Y$Y[,,wY], id=Y$id[wY])}
   if (Y$type=="factor" || Y$type=="scalar") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY])}
 
-  impurete <- impurity(Y_boot, timeScale=timeScale) #### impuretÃ© dans l'ech boot au dÃ©part
+
   imp_nodes <- list()
-  imp_nodes[[1]] <- impurete
+  imp_nodes[[1]] = Inf
+  impurete = Inf
+  if (Y$type!="surv"){
+    impurete <- impurity(Y_boot, timeScale)
+    imp_nodes[[1]] <- impurete
+  }
 
   id_feuille <- rep(1,length(Y_boot$id)) #### localisation des feuilles de l'arbre
   id_feuille_prime <- id_feuille
-  hist_imp_nodes <- NULL
 
   for (p in 1:(length(unique(Y_boot$id))/2-1)){
     count_split <- 0
@@ -1449,11 +1482,6 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
       if (length(unique(Y_boot$id[w]))>1 & imp_nodes[[unique(id_feuille)[i]]] >0){
 
-        if (length(which(hist_imp_nodes[,1]==unique(id_feuille)[i]))==0){
-          if (Y_boot$type=="curve"){hist_imp_nodes <- rbind(hist_imp_nodes, c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id,time=Y_boot$time),timeScale=timeScale), length(unique(Y_boot$id[w]))))}
-          else {hist_imp_nodes <- rbind(hist_imp_nodes, c(unique(id_feuille)[i],impurity(list(type=Y_boot$type, Y=Y_boot$Y, id=Y_boot$id),timeScale=timeScale), length(unique(Y_boot$id[w]))))}
-        }
-
         # On est ici
 
         if (is.element("curve",split.spaces)==TRUE){
@@ -1481,7 +1509,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           Image_courant <- list(type = Image_boot$type, X=Image_boot$X[,,wXImage,tirageImage, drop=FALSE], id=Image_boot$id[wXImage])
         }
 
-        if (Y_boot$type=="curve"){
+        if (Y_boot$type=="curve" || Y_boot$type=="surv"){
           Y_courant <- list(type=Y_boot$type, Y=Y_boot$Y[w], id=Y_boot$id[w], time=Y_boot$time[w])
         }
 
@@ -1577,19 +1605,20 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
           vsplit_space <- get(paste("tirage",TYPE, sep=""))[feuille_split$variable]
 
-          imp_avant_split <- imp_nodes[[unique(id_feuille)[i]]]
-          imp_apres_split <- feuille_split$impurete
-
           #if (imp_apres_split<imp_avant_split){
 
           gauche_id <- unique(Y_boot$id[w])[which(feuille_split$split==1)]
           droit_id <- unique(Y_boot$id[w])[which(feuille_split$split==2)]
 
-          imp_nodes[[2*unique(id_feuille)[i]]] <- feuille_split$impur_list[[1]]
-          imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
+          if (Y$type=="surv"){
+            imp_nodes[[2*unique(id_feuille)[i]]] <- Inf
+            imp_nodes[[2*unique(id_feuille)[i]+1]] <- Inf
+          }
+          else {
+            imp_nodes[[2*unique(id_feuille)[i]]] <- feuille_split$impur_list[[1]]
+            imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
+          }
 
-          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i],feuille_split$impur_list[[1]], length(which(feuille_split$split==1))))
-          hist_imp_nodes <- rbind(hist_imp_nodes, c(2*unique(id_feuille)[i]+1,feuille_split$impur_list[[2]], length(which(feuille_split$split==2))))
 
           V_split <- rbind(V_split,c(TYPE,unique(id_feuille)[i],vsplit_space))
 
@@ -1651,8 +1680,6 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           count_split <- count_split+1
 
           feuilles_courantes <- unique(id_feuille_prime)
-          info_feuilles <- hist_imp_nodes[is.element(hist_imp_nodes[,1], feuilles_courantes),]
-          impurete <- c(impurete, sum(info_feuilles[,2]*info_feuilles[,3]/length(unique(Y_boot$id))))
         }
 
 
@@ -1687,12 +1714,17 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           Y_pred[[q]] <- rbase.mean(donnees)$x
         }
 
+        if (Y$type=="surv"){
+          donnees = survfit(Surv(Y_boot$time[w], Y_boot$Y[w])~1)
+          Y_pred[[q]] <- data.frame(times=donnees$time, traj=donnees$surv)
+        }
+
       }
       if (Y$type=="factor"){
         Ylevels <- unique(Y_boot$Y)
-        return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes, boot=boot, Ylevels=Ylevels))
+        return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, boot=boot, Ylevels=Ylevels))
       }
-      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes,boot=boot))
+      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, boot=boot))
     }
   }
 
@@ -1723,12 +1755,17 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
       Y_pred[[q]] <- mshape(Y_boot$Y[,,w, drop=FALSE])
     }
 
+    if (Y$type=="surv"){
+      donnees = survfit(Surv(Y_boot$time[w], Y_boot$Y[w])~1)
+      Y_pred[[q]] <- data.frame(times=donnees$time, traj=donnees$surv)
+    }
+
   }
   if (Y$type=="factor"){
     Ylevels <- unique(Y_boot$Y)
-    return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, hist_imp_nodes=hist_imp_nodes, Ylevels=Ylevels, boot=boot))
+    return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, Ylevels=Ylevels, boot=boot))
   }
-  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split, impurity=impurete, hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, hist_imp_nodes=hist_imp_nodes, boot=boot))
+  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split, hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, boot=boot))
 }
 
 
@@ -1780,6 +1817,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @param Image [list]:
 #' @param aligned.shape [logical]:
 #' @param timeScale [numeric]:
+#' @param d_out [numeric]:
 #' @param ... : optional parameters to be passed to the low level function
 #'
 #' @import kmlShape
@@ -1791,7 +1829,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @return
 #' @export
 #'
-predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL,aligned.shape=FALSE, timeScale=0.1,...){
+predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL,aligned.shape=FALSE, timeScale=0.1, d_out=0.1,...){
   # La première étape est de toujours lire les prédicteurs ::
 
   if (is.null(Curve)==FALSE){
@@ -1896,6 +1934,32 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
     names(pred) <- c("times", "traj", "ID")
   }
 
+  if (object$type=="surv"){
+    pred <- NULL
+    for (l in 1:dim(pred.feuille)[2]){
+      pred_courant <- NULL
+      for(k in 1:dim(pred.feuille)[1]){
+        pred_courant <- rbind(pred_courant, cbind(rep(k,dim(object$rf[,k]$Y_pred[[pred.feuille[k,l]]])[1]),object$rf[,k]$Y_pred[[pred.feuille[k,l]]]))
+      }
+      Pred = cbind(sort(unique(pred_courant$times)), rep(NA,length(sort(unique(pred_courant$times)))))
+      ### Maintenant il faut prédire à partir de cet élément::
+      pred_courant2 = NULL
+      id_courant = NULL
+      for (k in sort(unique(pred_courant$times))){
+        w= which(pred_courant$times >= k)
+        for (j in unique(pred_courant[,1])){
+          w_y = intersect(w,which(pred_courant[,1]==j))
+          if (length(w_y)>= 1){
+            pred_courant2 = c(pred_courant2, pred_courant[w_y,][which.min(pred_courant[w_y,2]),3])
+          }
+        }
+        Pred[which(Pred[,1]==k),2] = mean(pred_courant2)
+      }
+      predouille <- cbind(Pred, rep(Id.pred[l],dim(Pred)[1]))
+      pred <- rbind(pred, predouille)
+    }
+    #names(pred) <- c("times", "traj", "ID")
+  }
   return(pred)
 }
 
@@ -1912,6 +1976,7 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
 #' @param Image
 #' @param Y
 #' @param timeScale
+#' @param d_out
 #'
 #' @import kmlShape
 #' @import Evomorph
@@ -1919,7 +1984,7 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
 #' @import RiemBase
 #'
 #' @keywords internal
-OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, timeScale=0.1){
+OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, timeScale=0.1, d_out=0.1){
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
   Inputs <- inputs
@@ -1936,7 +2001,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
   Curve_courant <- NULL
   Image_courant <- NULL
   Shape_courant <- NULL
-  if (Y$type=="curve"){
+  if (Y$type=="curve" || Y$type=="surv"){
     for (i in OOB){
       id_wY <- which(Y$id== i)
       if (is.element("curve",inputs)==TRUE) {
@@ -1965,7 +2030,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
       }
       pred_courant <- pred.FT(tree, Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape = Shape_courant,Image=Image_courant, timeScale=timeScale, aligned.shape = TRUE)
       #chancla <- DouglasPeuckerNbPoints(tree$Y_Curves[[pred_courant]]$times, tree$Y_Curves[[pred_courant]]$traj, nbPoints = length(stats::na.omit(Y[id_w])))
-      xerror[which(OOB==i)] <- kmlShape::distFrechet(tree$Y_pred[[pred_courant]]$times, tree$Y_pred[[pred_courant]]$traj, Y$time[id_wY], Y$Y[id_wY], timeScale = timeScale)^2
+      xerror[which(OOB==i)] <- kmlShape::distFrechet(tree$Y_pred[[pred_courant]]$times, tree$Y_pred[[pred_courant]]$traj, Y$time[id_wY], Y$Y[id_wY], timeScale = d_out)^2
     }
   }
   else {
@@ -2058,6 +2123,7 @@ Curve.reduc.times <- function(time.init , traj.init, time.new){
 #' @param Image
 #' @param Y
 #' @param timeScale
+#' @param d_out
 #'
 #' @import stringr
 #' @import kmlShape
@@ -2065,7 +2131,7 @@ Curve.reduc.times <- function(time.init , traj.init, time.new){
 #' @import geomorph
 #'
 #' @keywords internal
-OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL, Y, timeScale=0.1){
+OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL, Y, timeScale=0.1, d_out=0.1){
 
   ### Pour optimiser le code il faudra virer cette ligne et ne le calculer qu'une seule fois !
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
@@ -2085,11 +2151,69 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
   Shape_courant <- NULL
   Image_courant <- NULL
 
+
+  if (Y$type=="surv"){
+    oob.pred <- list()
+    #errdp <- rep(NA,length(unique(id)))
+
+    for (i in 1:length(unique(Y$id))){
+      indiv <- unique(Y$id)[i]
+      w_y <- which(Y$id==indiv)
+      courbe2 = Y$Y[w_y]
+      pred_courant <- rep(0, length(w_y))
+      n_ind = 0
+      for (t in 1:ncol(rf$rf)){
+        BOOT <- rf$rf[,t]$boot
+        oob <- setdiff(unique(Y$id),BOOT)
+        if (is.element(indiv, oob)== TRUE){
+          n_ind= n_ind+1
+
+          if (is.element("curve",inputs)==TRUE){
+            w_XCurve <- which(Curve$id== indiv)
+            Curve_courant <- list(type="curve", X=Curve$X[w_XCurve,, drop=FALSE], id=Curve$id[w_XCurve], time=Curve$time[w_XCurve])
+          }
+
+          if (is.element("scalar",inputs)==TRUE){
+            w_XScalar <- which(Scalar$id== indiv)
+            Scalar_courant <- list(type="scalar", X=Scalar$X[w_XScalar,, drop=FALSE], id=Scalar$id[w_XScalar])
+          }
+
+          if (is.element("factor",inputs)==TRUE){
+            w_XFactor <- which(Factor$id== indiv)
+            Factor_courant <- list(type="factor", X=Factor$X[w_XFactor,, drop=FALSE], id=Factor$id[w_XFactor])
+          }
+
+          if (is.element("shape",inputs)==TRUE){
+            w_XShape <- which(Shape$id== indiv)
+            Shape_courant <- list(type="shape", X=Shape$X[,,w_XShape,, drop=FALSE], id=Shape$id[w_XShape])
+          }
+
+          if (is.element("image",inputs)==TRUE){
+            w_XImage <- which(Image$id== indiv)
+            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+          }
+
+          pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
+          courbe <- rf$rf[,t]$Y_pred[[pred]] ## Il faut les mettre aux mêmes temps que Y$time[w_y]
+
+          for (j in 1:length(w_y)){
+            courbe2[j] = courbe[which.min(abs(Y$time[w_y][j]-courbe[,1])),2]
+          }
+          pred_courant <- pred_courant + courbe2
+        }
+      }
+      oob.pred[[i]] <-  data.frame(times=Y$time[w_y], traj=pred_courant/n_ind)
+      err[i] <- mean((Y$Y[w_y]-pred_courant/n_ind)^2)
+    }
+    return(list(err=err,oob.pred=oob.pred))
+  }
+
   if (Y$type=="curve"){
     oob.pred <- list()
     #errdp <- rep(NA,length(unique(id)))
 
     for (i in 1:length(unique(Y$id))){
+      print(i)
       indiv <- unique(Y$id)[i]
       w_y <- which(Y$id==indiv)
       pred_courant <- NULL
@@ -2128,11 +2252,11 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
           pred_courant <- rbind(cbind(rep(t,dim(courbe)[1]),courbe),pred_courant)
         }
       }
-      mean_pred <- meanFrechet(pred_courant)
+      mean_pred <- meanFrechet(pred_courant, timeScale = d_out)
       dp <- as.data.frame(Curve.reduc.times(mean_pred$times, mean_pred$traj, Y$time[w_y]))
       names(dp) <- c("x","y")
       oob.pred[[i]] <- dp
-      err[i] <- distFrechet(dp$x, dp$y, Y$time[w_y], Y$Y[w_y])^2
+      err[i] <- distFrechet(dp$x, dp$y, Y$time[w_y], Y$Y[w_y], timeScale = d_out)^2
     }
     return(list(err=err,oob.pred=oob.pred))
   }
@@ -2392,6 +2516,7 @@ permutation_shapes <- function(Shapes, id){
 #' @param ntry [numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.
 #' @param timeScale [numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.
 #' @param imp [logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)
+#' @param d_out [string]: "euc" or "frec".
 #' @param ... : optional parameters to be passed to the low level function
 #'
 #' @import stringr
@@ -2410,7 +2535,7 @@ permutation_shapes <- function(Shapes, id){
 #' }
 #' @export
 #'
-FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, ...){
+FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, d_out=0.1, ...){
 
 
   ### On va regarder les différentes entrées:
@@ -2469,13 +2594,12 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     ncores <- detectCores()-1
   }
 
+
   print("Building the maximal Frechet trees...")
 
   debut <- Sys.time()
   rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE)
   temps <- Sys.time() - debut
-
-
 
   if (Y$type=="shape" || Y$type=="image"){
     rf <- list(type=Y$type, rf=rf, size = dim(Y$Y) )
@@ -2484,32 +2608,68 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     rf <- list(type=Y$type, rf=rf, levels=levels(Y$Y))
   }
 
+
   print("Forest constucted !")
   xerror <- rep(NA, ntree)
+
   print("calcul erreur oob")
+  #cl <- parallel::makeCluster(ncores)
+  #doParallel::registerDoParallel(cl)
+
+  #xerror <- pbsapply(1:ntree, FUN=function(i){OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y=Y_KM, timeScale=timeScale,d_out=d_out)},cl=cl)
+
+  #parallel::stopCluster(cl)
+  xerror = rep(NA,ntree)
+
+  if (Y$type=="surv"){
+    ykm = NULL
+    tkm=NULL
+    idkm = NULL
+
+    for (i in unique(Y$id)){
+      qui = which(Y$id==i)
+      donnees = survfit(Surv(Y$time[qui],Y$Y[qui])~1)
+      ykm=c(ykm, donnees$surv)
+      tkm=c(tkm, donnees$time)
+      idkm = c(idkm, rep(i,length(donnees$surv)))
+    }
+    Y= list(type="surv", Y=ykm, id=idkm, time=tkm)
+  }
 
 
+  if (Y$type=="surv"){
+    for (i in 1:ntree){
+      xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y, timeScale=timeScale,d_out=d_out)
+    }
+    print("on passe erreur oob de la foret")
+    oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y, timeScale=timeScale, d_out=d_out)
+  }
 
-  cl <- parallel::makeCluster(ncores)
-  doParallel::registerDoParallel(cl)
-
-  xerror <- pbsapply(1:ntree, FUN=function(i){OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y=Y, timeScale=timeScale)},cl=cl)
-
-  parallel::stopCluster(cl)
+  else {
+    for (i in 1:ntree){
+      xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y=Y, timeScale=timeScale,d_out=d_out)
+    }
+    print("on passe erreur oob de la foret")
+    oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y=Y, timeScale=timeScale, d_out=d_out)
+  }
 
   # Ok pour le XERROR
 
-  print("on passe erreur oob de la foret")
 
-  oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y=Y, timeScale=timeScale)
-
-  if (imp == FALSE){
+  if (imp == FALSE && Y$type!="surv"){
     var.ini <- impurity(Y, timeScale)
     varex <- 1 - mean(oob.err$err)/var.ini
     frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels, xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, varex=varex, size=size, time=temps)
     class(frf) <- c("FrechForest")
     return(frf)
   }
+
+  if (imp == FALSE && Y$type=="surv"){
+    frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels, xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, size=size, time=temps)
+    class(frf) <- c("FrechForest")
+    return(frf)
+  }
+
 
   print("Importance calculation...")
   debut <- Sys.time()
@@ -2698,6 +2858,11 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
   temps.imp <- Sys.time() - debut
 
+  if (Y$type == "surv"){
+    frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels,xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, Importance=Importance, time=temps, size=size)
+    class(frf) <- c("FrechForest")
+    return(frf)
+  }
   var.ini <- impurity(Y, timeScale)
   varex <- 1 - mean(oob.err$err)/var.ini
   frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels,xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, Importance=Importance, varex=varex, time=temps, size=size)

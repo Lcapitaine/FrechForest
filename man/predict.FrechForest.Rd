@@ -13,6 +13,7 @@
   Image = NULL,
   aligned.shape = FALSE,
   timeScale = 0.1,
+  d_out = 0.1,
   ...
 )
 }
@@ -32,6 +33,8 @@
 \item{aligned.shape}{[logical]:}
 
 \item{timeScale}{[numeric]:}
+
+\item{d_out}{[numeric]:}
 
 \item{...}{: optional parameters to be passed to the low level function}
 }

@@ -18,6 +18,7 @@ FrechForest(
   timeScale = 0.1,
   ntry = 3,
   imp = TRUE,
+  d_out = 0.1,
   ...
 )
 }
@@ -47,6 +48,8 @@ FrechForest(
 \item{ntry}{[numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.}
 
 \item{imp}{[logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)}
+
+\item{d_out}{[string]: "euc" or "frec".}
 
 \item{...}{: optional parameters to be passed to the low level function}
 }

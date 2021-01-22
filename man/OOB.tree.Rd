@@ -12,11 +12,12 @@ OOB.tree(
   Shape = NULL,
   Image = NULL,
   Y,
-  timeScale = 0.1
+  timeScale = 0.1,
+  d_out = 0.1
 )
 }
 \arguments{
-\item{timeScale}{}
+\item{d_out}{}
 }
 \description{
 OOB tree
