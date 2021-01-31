@@ -73,7 +73,6 @@ ordonne <- function(X , time , id){
 #' @param timeScale
 #'
 #' @import kmlShape
-#' @import RiemBase
 #' @import DescTools
 #' @import Evomorph
 #' @import geomorph
@@ -101,11 +100,7 @@ impurity <- function(Y, timeScale=0.1){
     if (length(Y$id)==1){
       return(0)
     }
-    # On met au bon format ::
-    donnees <- riemfactory(Y$Y)
-    Moy <- rbase.mean(donnees)
-    Moy <- riemfactory(array(rep(Moy$x,length(Y$id)), dim=c(nrow(Y$Y),ncol(Y$Y),length(Y$id))))
-    return(mean(rbase.pdist2(Moy,donnees)[1,]^2))
+    return(mean(apply(Y$Y,2,"var")))
   }
 
   if (Y$type=="scalar"){
@@ -155,7 +150,7 @@ impurity_split <- function(Y,split,timeScale=0.1){
       for (j in 1:length(fils)){
         w <- c(w,which(Y$id==fils[j]))
       }
-      imp[[i]] <- impurity(list(type="image", Y=Y$Y[,,w], id=Y$id[w]))
+      imp[[i]] <- impurity(list(type="image", Y=Y$Y[w,], id=Y$id[w]))
       impur <- impur + imp[[i]]*prop
     }
 
@@ -203,7 +198,6 @@ impurity_split <- function(Y,split,timeScale=0.1){
 #'
 #' @import kmlShape
 #' @import Evomorph
-#' @import RiemBase
 #'
 #' @keywords internal
 ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
@@ -350,7 +344,7 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
     }
 
     if (X$type=="image"){
-      if (dim(X$X[,,,i])[3]>2){
+      if (nrow(X$X)>2){
         id_centers <- matrix(NA,ntry,2)
         for (l in 1:ntry){
           id_centers[l,] <- sample(X$id,2)
@@ -358,7 +352,6 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
         split_prime <- matrix(2,ntry,length(X$id))
 
-        factory <- riemfactory(X$X[,,,i])
 
         u <- 0
         qui <- NULL
@@ -367,15 +360,13 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
         for (c in 1:ntry){
 
-          w_g <- which(X$id==id_centers[1])
-          w_d <- which(X$id==id_centers[2])
+          w_g <- which(X$id==id_centers[c,1])
+          w_d <- which(X$id==id_centers[c,2])
           ### Il nous faut calculer la distance :
-          D <- rbase.pdist(factory)
-          dg <- D[,w_g]
-          dd <- D[,w_d]
-          for (l in 1:length(unique(X$id))){
-            if (dg[l]<=dd[l]) split_prime[c,l] <- 1
-          }
+          dg = apply(apply(X$X[,,i],1,"-",X$X[w_g,,i])^2,2,"mean")
+          dd = apply(apply(X$X[,,i],1,"-",X$X[w_d,,i])^2,2,"mean")
+
+          split_prime[c,which((dg<=dd)==TRUE)]=1
           if (length(unique(split_prime[c,]))>1){
             u <-u+1
             qui <- c(qui,c)
@@ -482,7 +473,6 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 #'
 #' @import kmlShape
 #' @import Evomorph
-#' @import RiemBase
 #'
 #' @keywords internal
 var_split <- function(X ,Y,timeScale=0.1){
@@ -579,7 +569,6 @@ var_split <- function(X ,Y,timeScale=0.1){
 #' @param ... : Optional parameters
 #'
 #' @import kmlShape
-#' @import RiemBase
 #' @import stringr
 #' @import Evomorph
 #' @import geomorph
@@ -669,7 +658,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
         if (Y$type=="curve"){Y_courant <- list(type=Y$type, Y=Y$Y[w_Y], id=Y$id[w_Y], time=Y$time[w_Y])}
         if(Y$type=="factor" || Y$type=="scalar"){Y_courant <- list(type=Y$type, Y=Y$Y[w_Y], id=Y$id[w_Y])}
         if (Y$type=="shape") { Y_courant <- list(type="shape",Y=Y$Y[,,w_Y], id=Y$id[w_Y])}
-        if (Y$type=="image"){Y_courant <- list(type="image",Y=Y$Y[,,w_Y], id=Y$id[w_Y])}
+        if (Y$type=="image"){Y_courant <- list(type="image",Y=Y$Y[w_Y,], id=Y$id[w_Y])}
         if (Y$type=="surv"){Y_courant <- list(type="surv", Y=Y$Y[w_Y], id=Y$id[w_Y], time=Y$time[w_Y])}
 
         # Il nous faut maintenant faire le split sur toutes les différents types :
@@ -727,8 +716,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
           }
 
           if (Y$type=="image"){
-            donnees <- riemfactory(Y$Y[,,w_Y])
-            Y_pred[[unique(id_feuille)[i]]] <- rbase.mean(donnees)$x
+            Y_pred[[unique(id_feuille)[i]]] <- apply(Y$Y[w_Y,, drop=FALSE], 2, "mean")
           }
 
           if (Y$type=="surv"){
@@ -828,8 +816,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
         }
 
         if (Y$type=="image"){
-          donnees <- riemfactory(Y$Y[,,w, drop =FALSE])
-          Y_pred[[q]] <- rbase.mean(donnees)$x
+          Y_pred[[q]] <- apply(Y$Y[w,, drop=FALSE], 2, "mean")
         }
 
       }
@@ -861,8 +848,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
     }
 
     if (Y$type=="image"){
-      donnees <- riemfactory(Y$Y[,,w, drop=FALSE])
-      Y_pred[[q]] <- rbase.mean(donnees)$x
+      Y_pred[[q]] <- apply(Y$Y[w_Y,, drop=FALSE], 2, "mean")
     }
 
     if (Y$type=="surv"){
@@ -1083,7 +1069,6 @@ elagage <- function(tree){
 #' @import parallel
 #' @import kmlShape
 #' @import Evomorph
-#' @import RiemBase
 #' @import pbapply
 #'
 #' @return
@@ -1101,7 +1086,7 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
 
   TMAX <- Tmax(Curve=Curve,Scalar = Scalar,Factor=Factor, Shape=NULL,Image=NULL,Y,timeScale = timeScale)
 
-  if (Y$type=="image" || Y$type=="shape") dime <- dim(Y$Y)[1:2]
+  if (Y$type=="shape") dime <- dim(Y$Y)[1:2]
 
 
   elag_max <- elagage(TMAX)
@@ -1185,9 +1170,14 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
       Y.val <- list(type=Y$type,Y=Y$Y[-w],id=Y$id[-w],time=Y$time[-w])
     }
 
-    if (Y$type=="shape" || Y$type=="image"){
+    if (Y$type=="shape"){
       Y.app <- list(type=Y$type,Y=Y$Y[,,w],id=Y$id[w])
       Y.val <- list(type=Y$type,Y=Y$Y[,, -w],id=Y$id[-w])
+    }
+
+    if (Y$type=="image"){
+      Y.app <- list(type=Y$type,Y=Y$Y[w,],id=Y$id[w])
+      Y.val <- list(type=Y$type,Y=Y$Y[-w,],id=Y$id[-w])
     }
 
 
@@ -1214,7 +1204,7 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
         if (Y$type=="curve") err_courant[j] <-  kmlShape::distFrechet(Y.val$time[ww], Y.val$Y[ww],sous_arbre$Y_pred[[where[j]]][,1], sous_arbre$Y_pred[[where[j]]][,2])
         if (Y$type=="scalar") err_courant[j] <- (Y.val$Y[ww]-where[j])^2
         if (Y$type=="factor") err_courant[j] <- 1*(Y.val$Y[ww]==where[j])
-        if (Y$type=="image") err_courant[j] <- rbase.pdist2(riemfactory(Y.val$Y[,,ww, drop=FALSE]),riemfactory(array(sous_arbre$Y_pred[[where[j]]],dim=c(dime[1],dime[2],1))))
+        if (Y$type=="image") err_courant[j] <- mean((Y.val[ww,]-sous_arbre$Y_pred[[where[j]]])^2)
         if (Y$type=="shape") err_courant[j] <- ShapeDist(array(sous_arbre$Y_pred[[where[j]]],dim=c(dime[1],dime[2],1)),Y.val$Y[,,ww])
       }
       res[k] <- mean(err_courant)
@@ -1278,7 +1268,6 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
 #' @import geomorph
 #' @import kmlShape
 #' @import Evomorph
-#' @import RiemBase
 #'
 #' @return
 #' @export
@@ -1344,8 +1333,8 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
       }
 
       if (type=="image"){
-        distG <- rbase.pdist2(riemfactory(array(data = meanG$x,dim=c(nrow(meanG$x), ncol(meanG$x),1))),riemfactory(array(X$X[,,wImage,var.split],dim=c(nrow(meanG$x), ncol(meanG$x),1))))
-        distD <- rbase.pdist2(riemfactory(array(data = meanD$x,dim=c(nrow(meanD$x), ncol(meanD$x),1))),riemfactory(array(X$X[,,wImage,var.split],dim=c(nrow(meanD$x), ncol(meanD$x),1))))
+        distG <- mean((X$X[wImage,,var.split]-meanG)^2)
+        distD <- mean((X$X[wImage,,var.split]-meanD)^2)
       }
 
       if (type=="factor"){
@@ -1387,7 +1376,6 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
 #' @param ... : option
 #'
 #' @import kmlShape
-#' @import RiemBase
 #' @import stringr
 #' @import Evomorph
 #' @import geomorph
@@ -1428,16 +1416,18 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
   }
 
   Y_pred <- list()
+  Y_pred_surv  <- list()
 
   if (is.element("curve",inputs)==TRUE) Curve_boot <- list(type=Curve$type,   X=Curve$X[wXCurve,, drop=FALSE], id= Curve$id[wXCurve], time = Curve$time[wXCurve]) ### bootstrap pour les courbes
   if (is.element("scalar",inputs)==TRUE) Scalar_boot <- list(type=Scalar$type,   X=Scalar$X[wXScalar,, drop=FALSE], id= Scalar$id[wXScalar]) ### bootstrap pour les courbes
   if (is.element("factor",inputs)==TRUE) Factor_boot <- list(type=Factor$type,   X=Factor$X[wXFactor,, drop=FALSE], id= Factor$id[wXFactor])
   if (is.element("shape",inputs)==TRUE) Shape_boot <- list(type=Shape$type,   X=Shape$X[,,wXShape, , drop=FALSE], id= Shape$id[wXShape])
-  if (is.element("image",inputs)==TRUE) Image_boot <- list(type=Image$type,   X=Image$X[,,wXImage, , drop=FALSE], id= Image$id[wXImage])
+  if (is.element("image",inputs)==TRUE) Image_boot <- list(type=Image$type,   X=Image$X[wXImage,,, drop=FALSE], id= Image$id[wXImage])
 
 
   if (Y$type=="curve" || Y$type=="surv") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY], time=Y$time[wY])} ### idem pour Y
-  if (Y$type=="image" || Y$type=="shape") {Y_boot <- list(type=Y$type, Y=Y$Y[,,wY], id=Y$id[wY])}
+  if (Y$type=="shape") {Y_boot <- list(type=Y$type, Y=Y$Y[,,wY], id=Y$id[wY])}
+  if (Y$type=="image") {Y_boot <- list(type=Y$type, Y=Y$Y[wY,], id=Y$id[wY])}
   if (Y$type=="factor" || Y$type=="scalar") {Y_boot <- list(type=Y$type,Y=Y$Y[wY], id=Y$id[wY])}
 
 
@@ -1505,16 +1495,20 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         }
 
         if (is.element("image",split.spaces)==TRUE){
-          tirageImage <- sample(1:dim(Image$X)[length(dim(Image$X))],length(which(variables=="image")))
-          Image_courant <- list(type = Image_boot$type, X=Image_boot$X[,,wXImage,tirageImage, drop=FALSE], id=Image_boot$id[wXImage])
+          tirageImage <- sample(1:dim(Image$X)[3],length(which(variables=="image")))
+          Image_courant <- list(type = Image_boot$type, X=Image_boot$X[wXImage,,tirageImage, drop=FALSE], id=Image_boot$id[wXImage])
         }
 
         if (Y_boot$type=="curve" || Y_boot$type=="surv"){
           Y_courant <- list(type=Y_boot$type, Y=Y_boot$Y[w], id=Y_boot$id[w], time=Y_boot$time[w])
         }
 
-        if (Y_boot$type=="image" || Y_boot$type=="shape"){
+        if (Y_boot$type=="shape"){
           Y_courant <- list(type=Y_boot$type, Y=Y_boot$Y[,,w, drop=FALSE], id=Y_boot$id[w, drop=FALSE])
+        }
+
+        if (Y_boot$type=="image"){
+          Y_courant <- list(type=Y_boot$type, Y=Y_boot$Y[w, ,drop=FALSE], id=Y_boot$id[w, drop=FALSE])
         }
 
 
@@ -1566,8 +1560,6 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             F_SPLIT <- rbind(F_SPLIT,c("Scalar",feuille_split_Scalar$impurete))
             decoupe <- decoupe +1
           }
-
-
         }
 
         if (is.element("shape",split.spaces)==TRUE){
@@ -1657,10 +1649,8 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           }
 
           if (X$type=="image"){
-            meanFg <- rbase.mean(riemfactory(X_boot$X[,,w_gauche,vsplit_space]))
-            meanFd <- rbase.mean(riemfactory(X_boot$X[,,w_droit,vsplit_space]))
-            hist_nodes[[2*(unique(id_feuille)[i])]] <- meanFg$x
-            hist_nodes[[2*(unique(id_feuille)[i])+1]] <- meanFd$x
+            meanFg <- apply(X_boot$X[w_gauche,,vsplit_space, drop=FALSE],2,"mean")
+            meanFd <- apply(X_boot$X[w_droit,,vsplit_space, drop=FALSE],2,"mean")
           }
 
           if (X$type=="factor"){
@@ -1672,7 +1662,6 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
             meanFg <- mean(X_boot$X[w_gauche,vsplit_space])
             meanFd <- mean(X_boot$X[w_droit,vsplit_space])
           }
-
 
 
           hist_nodes[[2*(unique(id_feuille)[i])]] <- meanFg
@@ -1710,13 +1699,13 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         }
 
         if (Y$type=="image"){
-          donnees <- riemfactory(Y_boot$Y[,,w, drop=FALSE])
-          Y_pred[[q]] <- rbase.mean(donnees)$x
+          Y_pred[[q]] <- apply(Y_boot$Y[w,,drop=FALSE], 2, "mean")
         }
 
         if (Y$type=="surv"){
           donnees = survfit(Surv(Y_boot$time[w], Y_boot$Y[w])~1)
           Y_pred[[q]] <- data.frame(times=donnees$time, traj=donnees$surv)
+          Y_pred_surv[[q]] <- data.frame(time=Y_boot$time[w], traj = Y_boot$Y[w])
         }
 
       }
@@ -1724,7 +1713,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         Ylevels <- unique(Y_boot$Y)
         return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, boot=boot, Ylevels=Ylevels))
       }
-      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, boot=boot))
+      return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, boot=boot, Y_pred_surv=Y_pred_surv))
     }
   }
 
@@ -1738,8 +1727,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
     }
 
     if (Y$type=="image"){
-      donnees <- riemfactory(Y_boot$Y[,,w, drop=FALSE])
-      Y_pred[[q]] <- rbase.mean(donnees)$x
+      Y_pred[[q]] <- apply(Y_boot$Y[w,,drop=FALSE], 2, "mean")
     }
 
     if(Y$type=="scalar"){
@@ -1758,6 +1746,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
     if (Y$type=="surv"){
       donnees = survfit(Surv(Y_boot$time[w], Y_boot$Y[w])~1)
       Y_pred[[q]] <- data.frame(times=donnees$time, traj=donnees$surv)
+      Y_pred_surv[[q]] <- data.frame(time=Y_boot$time[w], traj = Y_boot$Y[w])
     }
 
   }
@@ -1765,7 +1754,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
     Ylevels <- unique(Y_boot$Y)
     return(list(feuilles = id_feuille, idY=Y_boot$id,Ytype=Y_boot$type, V_split=V_split, hist_nodes=hist_nodes, Y_pred = Y_pred, time = time, Y=Y, Ylevels=Ylevels, boot=boot))
   }
-  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split, hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, boot=boot))
+  return(list(feuilles = id_feuille,Ytype=Y_boot$type, idY=Y_boot$id, V_split=V_split, hist_nodes=hist_nodes, Y_pred= Y_pred, time=time, Y=Y, boot=boot, Y_pred_surv=Y_pred_surv))
 }
 
 
@@ -1822,9 +1811,9 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #'
 #' @import kmlShape
 #' @import stringr
-#' @import RiemBase
 #' @import Evomorph
 #' @import geomorph
+#' @import survival
 #'
 #' @return
 #' @export
@@ -1909,14 +1898,13 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
   }
 
   if (object$type=="image"){
-    pred <- array(0, dim=c(object$size[1], object$size[2],length(Id.pred)))
+    pred <- matrix(0, dim=c(length(Id.pred), object$size[2]))
     for (l in 1:dim(pred.feuille)[2]){
-      pred_courant <- array(0,dim=c(object$size[1],object$size[2],ncol(object$rf)))
+      pred_courant <- matrix(0,dim=c(ncol(object$rf),object$size[2]))
       for(k in 1:dim(pred.feuille)[1]){
         pred_courant[,,k] <- object$rf[,k]$Y_pred[[pred.feuille[k,l]]]
       }
-      donnees <- riemfactory(pred_courant[,,,drop=FALSE])
-      pred[,,l] <- rbase.mean(donnees)$x
+      pred[,,l] <-  apply(pred_courant, 2, "mean")
     }
   }
 
@@ -1939,24 +1927,11 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
     for (l in 1:dim(pred.feuille)[2]){
       pred_courant <- NULL
       for(k in 1:dim(pred.feuille)[1]){
-        pred_courant <- rbind(pred_courant, cbind(rep(k,dim(object$rf[,k]$Y_pred[[pred.feuille[k,l]]])[1]),object$rf[,k]$Y_pred[[pred.feuille[k,l]]]))
+        pred_courant <- rbind(pred_courant, object$rf[,k]$Y_pred_surv[[pred.feuille[k,l]]])
       }
-      Pred = cbind(sort(unique(pred_courant$times)), rep(NA,length(sort(unique(pred_courant$times)))))
-      ### Maintenant il faut prédire à partir de cet élément::
-      pred_courant2 = NULL
-      id_courant = NULL
-      for (k in sort(unique(pred_courant$times))){
-        w= which(pred_courant$times >= k)
-        for (j in unique(pred_courant[,1])){
-          w_y = intersect(w,which(pred_courant[,1]==j))
-          if (length(w_y)>= 1){
-            pred_courant2 = c(pred_courant2, pred_courant[w_y,][which.min(pred_courant[w_y,2]),3])
-          }
-        }
-        Pred[which(Pred[,1]==k),2] = mean(pred_courant2)
-      }
-      predouille <- cbind(Pred, rep(Id.pred[l],dim(Pred)[1]))
-      pred <- rbind(pred, predouille)
+      predouille <- survfit(Surv(pred_courant$time[w], pred_courant$traj[w])~1)
+      P = data.frame(times=predouille$time, traj=predouille$surv, id= rep(l,length(predouille$time)))
+      pred <- rbind(pred, P)
     }
     #names(pred) <- c("times", "traj", "ID")
   }
@@ -1981,7 +1956,6 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
 #' @import kmlShape
 #' @import Evomorph
 #' @import stringr
-#' @import RiemBase
 #'
 #' @keywords internal
 OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, timeScale=0.1, d_out=0.1){
@@ -2016,7 +1990,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
 
       if (is.element("image",inputs)==TRUE){
         id_wXImage <- which(Image$id==i)
-        Image_courant <- list(type="image",X=Image$X[,,id_wXImage,,drop=FALSE], id=Image$id[id_wXImage])
+        Image_courant <- list(type="image",X=Image$X[id_wXImage,,,drop=FALSE], id=Image$id[id_wXImage])
       }
 
       if (is.element("factor",inputs)==TRUE){
@@ -2055,7 +2029,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
     if (is.element("scalar",inputs)==TRUE) Scalar_courant  <- list(type="scalar", X=Scalar$X[w_XScalar,, drop=FALSE], id=Scalar$id[w_XScalar])
     if (is.element("factor",inputs)==TRUE) Factor_courant  <- list(type="factor", X=Factor$X[w_XFactor,, drop=FALSE], id=Factor$id[w_XFactor])
     if (is.element("shape",inputs)==TRUE) Shape_courant  <- list(type="shape", X=Shape$X[,,w_XShape,, drop=FALSE], id=Shape$id[w_XShape])
-    if (is.element("image",inputs)==TRUE) Image_courant  <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+    if (is.element("image",inputs)==TRUE) Image_courant  <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
 
     pred <- pred.FT(tree,Curve=Curve_courant,Scalar = Scalar_courant,Factor=Factor_courant, Shape=Shape_courant, Image = Image_courant, aligned.shape = TRUE)
 
@@ -2072,9 +2046,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
     if (Y$type=="image"){
       xerror <- rep(NA,length(pred))
       for (l in 1:length(pred)){
-        moy_pred <- riemfactory(array(tree$Y_pred[[pred[l]]],dim=c(dim(Y$Y)[1],dim(Y$Y)[2],1)))
-        vraie <- riemfactory(Y$Y[,,w_y[l], drop=FALSE])
-        xerror[l] <- rbase.pdist2(vraie, moy_pred)^2
+        xerror[l] <- mean((Y$Y[w_y[l],]-tree$Y_pred[[pred[l]]])^2)
       }
     }
 
@@ -2190,7 +2162,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
@@ -2244,7 +2216,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
@@ -2295,7 +2267,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
@@ -2341,7 +2313,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
@@ -2391,7 +2363,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
@@ -2416,7 +2388,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
     for (i in 1:length(Y$id)){
       indiv <- unique(Y$id)[i]
       w_y <- which(Y$id==indiv)
-      pred_courant <- array(0, dim=c(dim(Y$Y)[1],dim(Y$Y)[2],length(rf$rf)))
+      pred_courant <- array(0, dim=c(length(rf$rf),ncol(Y$Y)))
       selection <- NULL
       for (t in 1:ncol(rf$rf)){
         BOOT <- rf$rf[,t]$boot
@@ -2445,19 +2417,15 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
           if (is.element("image",inputs)==TRUE){
             w_XImage <- which(Image$id== indiv)
-            Image_courant <- list(type="image", X=Image$X[,,w_XImage,, drop=FALSE], id=Image$id[w_XImage])
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
           pred <- pred.FT(rf$rf[,t],Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
-          pred_courant[,,t] <- rf$rf[,t]$Y_pred[[pred]]
+          pred_courant[t,] <- rf$rf[,t]$Y_pred[[pred]]
         }
       }
-      donnees <- riemfactory(pred_courant[,,selection])
-      oob.pred[,,i] <-  rbase.mean(donnees)$x
-      vraie <- riemfactory(Y$Y[,,w_y, drop=FALSE])
-      pred_comp<- riemfactory(oob.pred[,,i, drop=FALSE])
-
-      err[i] <- rbase.pdist2(vraie, pred_comp)^2
+      oob.pred[i,] <-  apply(pred_courant,2,"mean")
+      err[i] <- mean((oob.pred[i,]-Y$Y[w_y,])^2)
     }
     return(list(err=err,oob.pred=oob.pred))
   }
@@ -2612,7 +2580,9 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   print("Forest constucted !")
   xerror <- rep(NA, ntree)
 
-  print("calcul erreur oob")
+  print("OOB error computation...")
+
+
   #cl <- parallel::makeCluster(ncores)
   #doParallel::registerDoParallel(cl)
 
@@ -2641,7 +2611,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     for (i in 1:ntree){
       xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y, timeScale=timeScale,d_out=d_out)
     }
-    print("on passe erreur oob de la foret")
+    print("Computing the OOB error of the Fréchet forest")
     oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y, timeScale=timeScale, d_out=d_out)
   }
 
@@ -2649,7 +2619,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     for (i in 1:ntree){
       xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y=Y, timeScale=timeScale,d_out=d_out)
     }
-    print("on passe erreur oob de la foret")
+    print("Computing the OOB error of the Fréchet forest")
     oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y=Y, timeScale=timeScale, d_out=d_out)
   }
 
@@ -2823,12 +2793,12 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   if (is.element("image",inputs)==TRUE){
     p=1
     print('Computing the importance on the space of images')
-    Image.err <- matrix(NA, ntree, dim(Image$X)[length(dim(Image$X))])
+    Image.err <- matrix(NA, ntree, dim(Image$X)[3])
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
 
-    Importance.Image <- foreach::foreach(p=1:dim(Image$X)[length(dim(Image$X))],.packages = "kmlShape" ,.combine = "c") %dopar% {
+    Importance.Image <- foreach::foreach(p=1:dim(Image$X)[3],.packages = "kmlShape" ,.combine = "c") %dopar% {
 
       for (k in 1:ntree){
         BOOT <- rf$rf[,k]$boot
@@ -2841,13 +2811,13 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
         # Il faut maintenant faire la permutation :
 
-        Image.perm$X[,,-id_boot_Image,p] <- permutation_shapes(Image.perm$X[,,-id_boot_Image, p], Image.perm$id[-id_boot_Image])
+        Image.perm$X[-id_boot_Image,,p] <- Image.perm$X[-id_boot_Image,,p][sample(nboot),]
 
         Image.err[k,p] <- OOB.tree(rf$rf[,k], Curve=Curve, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image.perm, Y, timeScale=timeScale)
 
       }
       ##on remet la variable en place :::
-      Image.perm$X[,,,p] <- Image$X[,,,p]
+      Image.perm$X[,,p] <- Image$X[,,p]
       res <- mean(Image.err[,p]- xerror)
     }
 
