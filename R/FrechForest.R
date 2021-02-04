@@ -2218,7 +2218,6 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
     #errdp <- rep(NA,length(unique(id)))
 
     for (i in 1:length(unique(Y$id))){
-      print(i)
       indiv <- unique(Y$id)[i]
       w_y <- which(Y$id==indiv)
       pred_courant <- NULL
