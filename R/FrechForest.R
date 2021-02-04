@@ -15,6 +15,39 @@ read.Xarg <- function(z){
 }
 
 
+#' Title
+#'
+#' @param M
+#' @param N
+#'
+#' @keywords internal
+Image_transfo <- function(M,N){
+  col = c(1:(M*N))%%N
+  col[which(col==0)]=N
+  ligne=rep(NA,M*N)
+  for (i in 1:M){
+    ligne[(N*(i-1)+1):(N*i)]=rep(i,N)
+  }
+  D= exp(-(as.matrix(dist( cbind(ligne,col), diag = TRUE))^2)/2)/(2*pi)
+  vp = eigen(D)
+  return( vp$vectors%*% diag(sqrt(vp$values)) %*% t(vp$vectors))
+}
+
+#' Title
+#'
+#' @param X
+#' @param Q
+#'
+#' @keywords internal
+transfo_lin <- function(X,Q){
+  X_lin = matrix(0, nrow(X), ncol(X))
+  for (i in 1:nrow(X_lin)){
+    X_lin[i,]= Q%*%X[i,]
+  }
+  return(X_lin)
+}
+
+
 #' Factor partitions finder
 #'
 #' This function is used to find all the unique partitions of k factors into 2 groups
@@ -1898,9 +1931,9 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
   }
 
   if (object$type=="image"){
-    pred <- matrix(0, dim=c(length(Id.pred), object$size[2]))
+    pred <- matrix(0, length(Id.pred), object$size[2])
     for (l in 1:dim(pred.feuille)[2]){
-      pred_courant <- matrix(0,dim=c(ncol(object$rf),object$size[2]))
+      pred_courant <- matrix(0,ncol(object$rf),object$size[2])
       for(k in 1:dim(pred.feuille)[1]){
         pred_courant[,,k] <- object$rf[,k]$Y_pred[[pred.feuille[k,l]]]
       }
@@ -2525,6 +2558,12 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   }
 
   if (is.null(Image)==FALSE){
+    im = Image$X
+    for (j in 1:dim(im)[3]){
+      M=N=sqrt(dim(im)[2])
+      Q= Image_transfo(M,N)
+      im[,,j]= transfo_lin(im[,,j],Q)
+    }
     Image <- list(type="image",X=Image$X,id=Image$id)
   }
 
