@@ -1848,7 +1848,6 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @import geomorph
 #' @import survival
 #'
-#' @return
 #' @export
 #'
 predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL,aligned.shape=FALSE, timeScale=0.1, d_out=0.1,...){
@@ -2665,7 +2664,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
 
   if (imp == FALSE && Y$type!="surv"){
-    var.ini <- impurity(Y, timeScale)
+    var.ini <- impurity(Y, timeScale=timeScale)
     varex <- 1 - mean(oob.err$err)/var.ini
     frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels, xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, varex=varex, size=size, time=temps)
     class(frf) <- c("FrechForest")
