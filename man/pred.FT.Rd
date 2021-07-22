@@ -32,9 +32,6 @@ pred.FT(
 
 \item{timeScale}{[numeric]: Time scale for the input and output curves (\code{timeScale=0.1} by default)}
 }
-\value{
-
-}
 \description{
 Predict Frechet tree
 }

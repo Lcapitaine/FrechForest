@@ -26,9 +26,6 @@ FrechetTree(
 
 \item{ncores}{[numeric]:}
 }
-\value{
-
-}
 \description{
 General Frechet Tree
 }

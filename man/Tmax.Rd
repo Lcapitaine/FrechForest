@@ -2,7 +2,7 @@
 % Please edit documentation in R/FrechForest.R
 \name{Tmax}
 \alias{Tmax}
-\title{Maximal Fréchet tree}
+\title{Maximal Frechet tree}
 \usage{
 Tmax(
   Curve = NULL,
@@ -33,6 +33,6 @@ Tmax(
 \item{...}{: Optional parameters}
 }
 \description{
-Maximal Fréchet tree
+Maximal Frechet tree
 }
 \keyword{internal}

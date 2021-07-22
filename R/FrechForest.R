@@ -258,7 +258,7 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
         for (l in L[[tirage]]){
           split[[i]][which(X$id==l)] <- 1
         }
-        # Il faut maintenant regarder la qualité du découpage ::
+        # Il faut maintenant regarder la qualite du decoupage ::
         impurete <- impurity_split(Y,split[[i]])
         impur[i] <- impurete$impur
         toutes_imp[[i]] <- impurete$imp_list
@@ -350,7 +350,7 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
             imp <- c(imp, impurete2[[c]]$impur)
           }
         }
-        ## Il nous faut calculer les distances à gauche et à droite pour chaque élément
+        ## Il nous faut calculer les distances à gauche et à droite pour chaque element
 
         if (u>0){
           gagnant <- qui[which.min(imp)]
@@ -513,7 +513,7 @@ var_split <- function(X ,Y,timeScale=0.1){
   impur <- rep(0,dim(X$X)[length(dim(X$X))])
   toutes_imp <- list()
   split <- list()
-  centers <- list() # On va stocker les centres associés aux kmeans
+  centers <- list() # On va stocker les centres associes aux kmeans
   Pure <- FALSE
 
   for (i in 1:dim(X$X)[length(dim(X$X))]){
@@ -530,7 +530,7 @@ var_split <- function(X ,Y,timeScale=0.1){
           for (l in L[[k]]){
             split_courant[[k]][which(X$id==l)] <- 1
           }
-          # Il faut maintenant regarder la qualité du découpage ::
+          # Il faut maintenant regarder la qualite du decoupage ::
           impurete <- impurity_split(Y,split_courant[[k]])
           impur_courant[k] <- impurete$impur
           toutes_imp_courant[[k]] <- impurete$imp_list
@@ -590,7 +590,7 @@ var_split <- function(X ,Y,timeScale=0.1){
 
 
 
-#' Maximal Fréchet tree
+#' Maximal Frechet tree
 #'
 #' @param Curve [list]:
 #' @param Scalar [list]:
@@ -634,7 +634,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
   # On commence par lire les arguments :
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
   Inputs <- inputs
-  # On va les lires en mettant la maj sur les différents éléments qui le constituent :
+  # On va les lires en mettant la maj sur les differents elements qui le constituent :
 
   for (k in 1:length(Inputs)){
     str_sub(Inputs[k],1,1) <- str_to_upper(str_sub(Inputs[k],1,1))
@@ -666,7 +666,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
       #On rÃ©cupÃ¨re les identifiants des individus dans ces feuilles
       which_feuilles <- unique(Y$id[w_Y])
 
-      ### Il faut trouver les moyen d'avoir de manière automatique les indexes de chaque entrée
+      ### Il faut trouver les moyen d'avoir de manière automatique les indexes de chaque entree
 
       w_XCurve <- NULL
       w_XScalar <- NULL
@@ -680,7 +680,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
 
       if (length(unique(Y$id[w_Y]))>1 & imp_nodes[[unique(id_feuille)[i]]] >0){
 
-        #Il nous faut les entrées :
+        #Il nous faut les entrees :
 
         if (is.element("curve",inputs)==TRUE) Curve_courant <- list(type=Curve$type, X=Curve$X[w_XCurve,],id=Curve$id[w_XCurve], time=Curve$time[w_XCurve])
         if (is.element("scalar",inputs)==TRUE) {Scalar_courant <- list(type=Scalar$type, X=Scalar$X[w_XScalar,], id=Scalar$id[w_XScalar])}
@@ -694,7 +694,7 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
         if (Y$type=="image"){Y_courant <- list(type="image",Y=Y$Y[w_Y,], id=Y$id[w_Y])}
         if (Y$type=="surv"){Y_courant <- list(type="surv", Y=Y$Y[w_Y], id=Y$id[w_Y], time=Y$time[w_Y])}
 
-        # Il nous faut maintenant faire le split sur toutes les différents types :
+        # Il nous faut maintenant faire le split sur toutes les differents types :
 
         F_SPLIT <- NULL
         decoupe <- 0
@@ -955,8 +955,8 @@ branche <- function(tree, t){
 
   if (length(noeuds_courants1)==0) {sous_feuilles <- c(2*t, 2*t+1)}
 
-  ## C'est maintenant que ça devient coton :::
-  # Il faut récupérer les id des gens qui sont
+  ## C'est maintenant que ca devient coton :::
+  # Il faut recuperer les id des gens qui sont
 
   s_feuilles <- NULL
   s_id <- NULL
@@ -1104,12 +1104,11 @@ elagage <- function(tree){
 #' @import Evomorph
 #' @import pbapply
 #'
-#' @return
 #' @export
 #'
 FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncores=NULL){
 
-  ### Il faut normaliser les éléments des formes ::
+  ### Il faut normaliser les elements des formes ::
 
   if (is.null(ncores)==TRUE) ncores <- detectCores()-1
 
@@ -1175,7 +1174,7 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
     }
     APP <- w
 
-    ### On prend les éléments d'apprentissage maintenant :::
+    ### On prend les elements d'apprentissage maintenant :::
 
     if (is.null(Scalar)!=TRUE){
       Scalar.app <- list(X=Scalar$X[wScalar,,drop=FALSE], id=Scalar$id[wScalar])
@@ -1273,7 +1272,7 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
     #  pen[l] <- ELAG[[k]][[l]]$Alpha
     #}
   #}
-  ## On va faire l'affichage de la sélection de l'abre
+  ## On va faire l'affichage de la selection de l'abre
   #plot(err_M)
   #lines(rep(seuil, length(err_M)),col=2)
   #points(optimal.tree,err_M[optimal.tree], col=2)
@@ -1302,7 +1301,6 @@ FrechetTree <- function(Curve=NULL,Scalar=NULL,Factor=NULL,Y,timeScale=0.1, ncor
 #' @import kmlShape
 #' @import Evomorph
 #'
-#' @return
 #' @export
 #'
 pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NULL, aligned.shape=FALSE ,timeScale=0.1){
@@ -1345,7 +1343,7 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
       type <- str_to_lower(as.character(tree$V_split[which(tree$V_split[,2]==noeud_courant),1]))
       var.split <- as.numeric(as.character(tree$V_split[which(tree$V_split[,2]==noeud_courant),3]))
 
-      # Maintenant il nous faut regarder la différence entre la moyenne à gauche et a droite et conclure :
+      # Maintenant il nous faut regarder la difference entre la moyenne à gauche et a droite et conclure :
 
       meanG <- tree$hist_nodes[[2*noeud_courant]]
       meanD <- tree$hist_nodes[[2*noeud_courant+1]]
@@ -1478,13 +1476,13 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
   for (p in 1:(length(unique(Y_boot$id))/2-1)){
     count_split <- 0
     for (i in 1:length(unique(id_feuille))){
-      # Il faut que l'on regarde le tirage des variables de manière aléatoire :
+      # Il faut que l'on regarde le tirage des variables de manière aleatoire :
       V <- NULL
       for (v in Inputs){
         V <- c(V, rep(get(v)$type,dim(get(v)$X)[length(dim(get(v)$X))]))
       }
       variables <- sample(V,mtry) # Maintenant on sait combien on doit en tirer dans chaque espace
-      # On ne va regarder que les espaces tirés :
+      # On ne va regarder que les espaces tires :
       split.spaces <- unique(variables)
 
       # variables <- sample(c(1:dim(X_boot$X[,,drop=FALSE])[2]),mtry)
@@ -1851,7 +1849,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @export
 #'
 predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL,aligned.shape=FALSE, timeScale=0.1, d_out=0.1,...){
-  # La première étape est de toujours lire les prédicteurs ::
+  # La première etape est de toujours lire les predicteurs ::
 
   if (is.null(Curve)==FALSE){
     Curve <- list(type="curve",X=Curve$X,id=Curve$id,time=Curve$time)
@@ -1869,11 +1867,11 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
     Image <- list(type="image",X=Image$X,id=Image$id)
   }
 
-  ## Puis on prend les prédicteurs:
+  ## Puis on prend les predicteurs:
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
   Inputs <- inputs
-  # On va les lires en mettant la maj sur les différents éléments qui le constituent :
+  # On va les lires en mettant la maj sur les differents elements qui le constituent :
 
   for (k in 1:length(Inputs)){
     str_sub(Inputs[k],1,1) <- str_to_upper(str_sub(Inputs[k],1,1))
@@ -2537,7 +2535,7 @@ permutation_shapes <- function(Shapes, id){
 FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, d_out=0.1, ...){
 
 
-  ### On va regarder les différentes entrées:
+  ### On va regarder les differentes entrees:
   if (is.null(Curve)==FALSE){
     Curve <- list(type="curve",X=Curve$X,id=Curve$id,time=Curve$time)
   }
@@ -2578,7 +2576,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     Y$Y <- gpagen(Y$Y,print.progress = FALSE)$coords
   }
 
-  # On récupère le nombre de variables au total :
+  # On recupère le nombre de variables au total :
   nvar <- 0
   for (k in Inputs){
     nvar <- nvar + dim(get(k)$X)[length(dim(get(k)$X))]
@@ -2648,7 +2646,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     for (i in 1:ntree){
       xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y, timeScale=timeScale,d_out=d_out)
     }
-    print("Computing the OOB error of the Fréchet forest")
+    print("Computing the OOB error of the Frechet forest")
     oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y, timeScale=timeScale, d_out=d_out)
   }
 
@@ -2656,7 +2654,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     for (i in 1:ntree){
       xerror[i] = OOB.tree(rf$rf[,i], Curve=Curve,Scalar=Scalar,Factor = Factor,Shape=Shape,Image=Image, Y=Y, timeScale=timeScale,d_out=d_out)
     }
-    print("Computing the OOB error of the Fréchet forest")
+    print("Computing the OOB error of the Frechet forest")
     oob.err <- OOB.rfshape(rf,Curve = Curve,Scalar =Scalar,Factor=Factor,Shape=Shape,Image=Image,Y=Y, timeScale=timeScale, d_out=d_out)
   }
 
