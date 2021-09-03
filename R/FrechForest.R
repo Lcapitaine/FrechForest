@@ -106,7 +106,6 @@ ordonne <- function(X , time , id){
 #' @param timeScale
 #'
 #' @import kmlShape
-#' @import DescTools
 #' @import Evomorph
 #' @import geomorph
 #' @import stats
@@ -144,7 +143,8 @@ impurity <- function(Y, timeScale=0.1){
   }
 
   if (Y$type=="factor"){
-    return(Entropy(table(Y$Y)))
+    p = table(Y$Y)/length(Y$Y)
+    return(-sum(p*log2(p)))
   }
 
   if (Y$type=="shape"){
