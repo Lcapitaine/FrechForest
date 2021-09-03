@@ -1,8 +1,8 @@
 Package: FrechForest
 Title: Frechet Random Forests
-Version: 0.9
+Version: 0.95
 Authors@R: person("Louis","Capitaine", email = "louis.capitaine@u-bordeaux.fr", role = c("aut", "cre"))
-Description: Random forests are a statistical learning method widely used in many areas of scientific research essentially for its ability to learn complex relationships between input and output variables and also its capacity to handle high-dimensional data. However, current random forests approaches are not flexible enough to handle longitudinal data, shapes and images.  In this package, we introduce Fréchet trees and Fréchet random forests, which allow to manage data for which input and output can either curves, scalars, factors, shapes or images. To this end, a new way of splitting the nodes of trees is introduced and the prediction procedures of trees and forests are generalized.
+Description: Random forests are a statistical learning method widely used in many areas of scientific research essentially for its ability to learn complex relationships between input and output variables and also its capacity to handle high-dimensional data. However, current random forests approaches are not flexible enough to handle longitudinal data, shapes and images.  In this package, we introduce Frechet trees and Frechet random forests, which allow to manage data for which input and output can either curves, scalars, factors, shapes or images. To this end, a new way of splitting the nodes of trees is introduced and the prediction procedures of trees and forests are generalized.
 Depends: R (>= 3.6.0)
 License: GPL-2
 Encoding: UTF-8
