@@ -748,8 +748,6 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
           w_gauche <- NULL
           w_droit <- NULL
 
-          print(paste("Split on the variable", feuille_split$variable, "of the space of ", TYPE))
-
           for (k in 1:length(gauche_id)){
             w_gauche <- c(w_gauche, which(X$id==gauche_id[k]))
             wY_gauche <- c(wY_gauche, which(Y$id==gauche_id[k]))
@@ -840,7 +838,6 @@ Tmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y
       Y_pred[[q]]<- mean(Y$Y[w])
     }
     if(Y$type=="factor"){
-      print(table(Y$Y[w]))
       Table <- which.max(table(Y$Y[w]))
       Y_pred[[q]] <-  as.factor(attributes(Table)$names)
     }
