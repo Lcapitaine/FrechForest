@@ -1,21 +1,21 @@
 
 #' OOB tree
 #'
-#' @param tree
-#' @param Curve
-#' @param Scalar
-#' @param Factor
-#' @param Shape
-#' @param Image
-#' @param Y
-#' @param timeScale
-#' @param d_out
+#' @param tree [list]: Frechet tree.
+#' @param Curve [list]: A list that contains the input curves.
+#' @param Scalar [list]: A list that contains the input scalars.
+#' @param Factor [list]: A list that contains the input factors.
+#' @param Shape [list]: A list that contains the input shape.
+#' @param Image [list]: A list that contains the input images.
+#' @param Y [list]: Output.
+#' @param timeScale [numeric]: Time scale for the input  curves (\code{timeScale=0.1} by default)
+#' @param d_out [numeric]: Time scale for the input curves (\code{d_out=0.1} by default)
 #'
 #' @import kmlShape
 #' @import Evomorph
 #' @import stringr
 #'
-#' @keywords internal
+#' @export
 OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, timeScale=0.1, d_out=0.1){
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))

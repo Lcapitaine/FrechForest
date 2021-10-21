@@ -17,9 +17,24 @@ OOB.tree(
 )
 }
 \arguments{
-\item{d_out}{}
+\item{tree}{[list]: Frechet tree.}
+
+\item{Curve}{[list]: A list that contains the input curves.}
+
+\item{Scalar}{[list]: A list that contains the input scalars.}
+
+\item{Factor}{[list]: A list that contains the input factors.}
+
+\item{Shape}{[list]: A list that contains the input shape.}
+
+\item{Image}{[list]: A list that contains the input images.}
+
+\item{Y}{[list]: Output.}
+
+\item{timeScale}{[numeric]: Time scale for the input  curves (\code{timeScale=0.1} by default)}
+
+\item{d_out}{[numeric]: Time scale for the input curves (\code{d_out=0.1} by default)}
 }
 \description{
 OOB tree
 }
-\keyword{internal}
