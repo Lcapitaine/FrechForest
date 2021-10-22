@@ -149,85 +149,119 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         }
 
 
-        F_SPLIT <- NULL
-        decoupe <- 0
+        F_SPLIT <- data.frame(vari = as.character(split.spaces), hetero= rep(Inf,length(split.spaces)))
 
         if (is.element("factor",split.spaces)==TRUE){
 
           if( ERT==FALSE){
-            feuille_split_Factor <- var_split(Factor_courant,Y_courant,timeScale)
+            feuille_split_factor = list(Pure = TRUE)
+            tryCatch({
+              feuille_split_factor <-  var_split(Factor_courant,Y_courant,timeScale)
+            }, error = function(sp){feuille_split_factor = list(Pure = TRUE)})
           }
 
-          else{feuille_split_Factor <- ERvar_split(Factor_courant,Y_courant,timeScale,ntry = ntry)}
-
-          if (feuille_split_Factor$Pure==FALSE){
-            F_SPLIT <- rbind(F_SPLIT,c("Factor",feuille_split_Factor$impurete))
-            decoupe <- decoupe +1
+          else{
+            feuille_split_factor = list(Pure = TRUE)
+            tryCatch({feuille_split_factor <- ERvar_split(X=Factor_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+          }, error = function(sp){feuille_split_factor = list(Pure = TRUE)})
           }
+
+          if (feuille_split_factor$Pure==FALSE){
+            F_SPLIT[which(F_SPLIT[,1]=="factor"),2] <- feuille_split_factor$impurete}
         }
 
         if (is.element("curve",split.spaces)==TRUE){
 
           if( ERT==FALSE){
-            feuille_split_Curve <- var_split(Curve_courant,Y_courant,timeScale)
+            feuille_split_curve = list(Pure = TRUE)
+            tryCatch({
+              feuille_split_curve <-  var_split(Curve_courant,Y_courant,timeScale)
+            }, error = function(sp){feuille_split_curve = list(Pure = TRUE)})
           }
 
-          else{feuille_split_Curve <- ERvar_split(Curve_courant,Y_courant,timeScale, ntry=ntry)}
-
-          if (feuille_split_Curve$Pure==FALSE){
-            F_SPLIT <- rbind(F_SPLIT,c("Curve",feuille_split_Curve$impurete))
-            decoupe <- decoupe +1
+          else{
+            feuille_split_curve = list(Pure = TRUE)
+            tryCatch({feuille_split_curve <- ERvar_split(X=Curve_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+            }, error = function(sp){feuille_split_curve = list(Pure = TRUE)})
           }
+
+          if (feuille_split_curve$Pure==FALSE){
+            F_SPLIT[which(F_SPLIT[,1]=="curve"),2] <- feuille_split_curve$impurete}
+
         }
 
         if (is.element("scalar",split.spaces)==TRUE){
 
           if( ERT==FALSE){
-            feuille_split_Scalar <- var_split(Scalar_courant,Y_courant,timeScale)
+            feuille_split_scalar = list(Pure = TRUE)
+            tryCatch({
+              feuille_split_scalar <-  var_split(Scalar_courant,Y_courant,timeScale)
+            }, error = function(sp){feuille_split_scalar = list(Pure = TRUE)})
           }
 
-          else{feuille_split_Scalar <- ERvar_split(Scalar_courant,Y_courant,timeScale, ntry=ntry)}
-
-          if (feuille_split_Scalar$Pure==FALSE){
-            F_SPLIT <- rbind(F_SPLIT,c("Scalar",feuille_split_Scalar$impurete))
-            decoupe <- decoupe +1
+          else{
+            feuille_split_scalar = list(Pure = TRUE)
+            tryCatch({feuille_split_scalar <- ERvar_split(X=Scalar_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+            }, error = function(sp){feuille_split_scalar = list(Pure = TRUE)})
           }
+
+          if (feuille_split_scalar$Pure==FALSE){
+            F_SPLIT[which(F_SPLIT[,1]=="scalar"),2] <- feuille_split_scalar$impurete}
+
         }
 
         if (is.element("shape",split.spaces)==TRUE){
 
-          feuille_split_Shape <- ERvar_split(Shape_courant,Y_courant,timeScale, ntry=ntry)
-
-
-          if (feuille_split_Shape$Pure==FALSE){
-            F_SPLIT <- rbind(F_SPLIT,c("Shape",feuille_split_Shape$impurete))
-            decoupe <- decoupe +1
+          if( ERT==FALSE){
+            feuille_split_shape = list(Pure = TRUE)
+            tryCatch({
+              feuille_split_shape <-  var_split(Shape_courant,Y_courant,timeScale)
+            }, error = function(sp){feuille_split_shape = list(Pure = TRUE)})
           }
+
+          else{
+            feuille_split_shape = list(Pure = TRUE)
+            tryCatch({feuille_split_shape <- ERvar_split(X=Shape_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+            }, error = function(sp){feuille_split_shape = list(Pure = TRUE)})
+          }
+
+          if (feuille_split_shape$Pure==FALSE){
+            F_SPLIT[which(F_SPLIT[,1]=="shape"),2] <- feuille_split_shape$impurete}
 
         }
 
 
         if (is.element("image",split.spaces)==TRUE){
 
-          feuille_split_Image <- ERvar_split(Image_courant,Y_courant,timeScale, ntry=ntry)
-
-          if (feuille_split_Image$Pure==FALSE){
-            F_SPLIT <- rbind(F_SPLIT,c("Image",feuille_split_Image$impurete))
-            decoupe <- decoupe +1
+          if( ERT==FALSE){
+            feuille_split_image = list(Pure = TRUE)
+            tryCatch({
+              feuille_split_image <-  var_split(Image_courant,Y_courant,timeScale)
+            }, error = function(sp){feuille_split_image = list(Pure = TRUE)})
           }
+
+          else{
+            feuille_split_image = list(Pure = TRUE)
+            tryCatch({feuille_split_image <- ERvar_split(X=Image_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+            }, error = function(sp){feuille_split_image = list(Pure = TRUE)})
+          }
+
+          if (feuille_split_image$Pure==FALSE){
+            F_SPLIT[which(F_SPLIT[,1]=="image"),2] <- feuille_split_image$impurete}
 
         }
 
 
-        if (decoupe>0){
+        if (min(F_SPLIT[,2])<Inf){
 
-          TYPE <- F_SPLIT[which.min(F_SPLIT[,2]),1]
-          X <- get(TYPE)
-          X_boot <- get(paste(TYPE,"_boot",sep=""))
+          TYPE <- as.character(F_SPLIT[which.min(F_SPLIT[,2]),1])
+          TYPE2 <- paste(str_to_upper(str_sub(TYPE,1,1)),str_sub(TYPE,2,nchar(TYPE)),sep="")
+          X <- get(TYPE2)
+          X_boot <- get(paste(TYPE2,"_boot",sep=""))
 
           feuille_split <- get(paste("feuille_split_",TYPE, sep=""))
 
-          vsplit_space <- get(paste("tirage",TYPE, sep=""))[feuille_split$variable]
+          vsplit_space <- get(paste("tirage",TYPE2, sep=""))[feuille_split$variable]
 
           #if (imp_apres_split<imp_avant_split){
 
@@ -239,7 +273,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           imp_nodes[[2*unique(id_feuille)[i]+1]] <- feuille_split$impur_list[[2]]
 
 
-          V_split <- rbind(V_split,c(TYPE,unique(id_feuille)[i],vsplit_space))
+          V_split <- rbind(V_split,c(TYPE2,unique(id_feuille)[i],vsplit_space))
 
           wY_gauche <- NULL
           wY_droit <- NULL
