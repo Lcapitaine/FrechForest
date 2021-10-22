@@ -29,12 +29,13 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
   if (type=="curve"){
     imp = NULL
     Curve.err <- matrix(NA, ntree, length(range))
-    Curve.perm <- Curve
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
 
     imp <- foreach::foreach(p = 1:length(range),.packages = "kmlShape" ,.combine = "rbind") %dopar% {
+
+      Curve.perm <- Curve
 
       for (k in 1:ntree){
 
@@ -65,13 +66,13 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
     imp=NULL
     Scalar.err <- matrix(NA, length(trees), length(range))
-    Scalar.perm <- Scalar
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
 
     imp <- foreach::foreach(p =1:length(range),.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
+      Scalar.perm <- Scalar
       for (k in 1:ntree){
 
         tree <- get(load(trees[k]))
