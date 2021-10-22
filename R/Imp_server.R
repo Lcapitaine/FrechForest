@@ -29,6 +29,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
   if (type=="curve"){
     imp = NULL
     Curve.err <- matrix(NA, ntree, length(range))
+    Curve.perm <- Curve
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
@@ -48,7 +49,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
         #Permutation time
 
-        Curve.perm$X[-id_boot_Curve,p] <- permutation_courbes(Curve$X[-id_boot_Curve,range[p]], Curve$id[-id_boot_Curve])
+        Curve.perm$X[-id_boot_Curve,range[p]] <- permutation_courbes(Curve$X[-id_boot_Curve,range[p]], Curve$id[-id_boot_Curve])
 
 
         Curve.err[k,p] <- OOB.tree(tree, Curve=Curve.perm, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)
@@ -64,11 +65,12 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
     imp=NULL
     Scalar.err <- matrix(NA, length(trees), length(range))
+    Scalar.perm <- Scalar
 
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
 
-    imp <- foreach::foreach(p =1:length(range),.packages = "kmlShape" ,.combine = "c") %dopar% {
+    imp <- foreach::foreach(p =1:length(range),.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
       for (k in 1:ntree){
 
@@ -83,7 +85,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
         }
 
 
-        Scalar.perm$X[-id_boot_Scalar,p] <- sample(Scalar.perm$X[-id_boot_Scalar,range[p]])
+        Scalar.perm$X[-id_boot_Scalar,range[p]] <- sample(Scalar.perm$X[-id_boot_Scalar,range[p]])
 
         Scalar.err[k,p] <- OOB.tree(tree, Curve=Curve, Scalar = Scalar.perm, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)
 
