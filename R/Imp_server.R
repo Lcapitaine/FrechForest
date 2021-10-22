@@ -18,7 +18,7 @@
 Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
                               Image=NULL ,Y ,type=NULL, range=NULL,ncores=NULL, timeScale=0.1, xerror){
   if(is.null(ncores)==TRUE){
-    ncores <- detectCores()-1
+    ncores <- detectCores()
   }
 
   trees = list.files(Trees)
@@ -33,7 +33,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
     cl <- parallel::makeCluster(ncores)
     doParallel::registerDoParallel(cl)
 
-    imp <- foreach::foreach(p = 1:length(range),.packages = "kmlShape" ,.combine = "c") %dopar% {
+    imp <- foreach::foreach(p = 1:length(range),.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
       for (k in 1:ntree){
 
@@ -55,7 +55,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
       }
       Curve.perm$X[,range[p]] <- Curve$X[,range[p]]
-      res <- mean(Curve.err[,p]- xerror)
+      res <- c(range[p],mean(Curve.err[,p]- xerror))
     }
     parallel::stopCluster(cl)
   }
@@ -89,7 +89,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
       }
       Scalar.perm$X[,range[p]] <- Scalar$X[,range[p]]
-      res <- mean(Scalar.err[,p]- xerror)
+      res <- c(range[p],mean(Scalar.err[,p]- xerror))
     }
 
     parallel::stopCluster(cl)
