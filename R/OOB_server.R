@@ -16,7 +16,7 @@
 #' @import kmlShape
 #'
 #' @export
-OOB.rfshape.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,
+OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,
                                ncores=NULL,range=NULL, Y, timeScale=0.1, d_out=0.1){
 
   ### Pour optimiser le code il faudra virer cette ligne et ne le calculer qu'une seule fois !
