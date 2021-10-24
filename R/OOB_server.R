@@ -26,6 +26,9 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
   trees = list.files(rf)
   ntree = length(trees)
 
+  t1 <- gsub(".Rdata","", trees)
+  nt <- sort(as.numeric(gsub("tree_","", t1)))
+
   if(is.null(ncores)==TRUE){
     ncores <- detectCores()
   }
@@ -55,7 +58,8 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
 
       pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
-        tree = get(load(trees[t]))
+
+        tree = get(load(paste0("tree_",nt[t],".Rdata")))
         BOOT <- tree$boot
         oob <- setdiff(unique(Y$id),BOOT)
         if (is.element(indiv, oob)== TRUE){
@@ -107,7 +111,7 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
 
       pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "c") %dopar% {
 
-        tree = get(load(trees[t]))
+        tree = get(load(paste0("tree_",nt[t],".Rdata")))
         BOOT <- tree$boot
         oob <- setdiff(unique(Y$id),BOOT)
 

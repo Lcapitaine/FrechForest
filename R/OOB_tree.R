@@ -1,4 +1,3 @@
-
 #' OOB tree
 #'
 #' @param tree [list]: Frechet tree.
