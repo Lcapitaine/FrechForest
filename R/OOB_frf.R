@@ -243,7 +243,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
     for (i in 1:length(Y$id)){
       indiv <- unique(Y$id)[i]
       w_y <- which(Y$id==indiv)
-      pred_courant <- array(0, dim=c(length(rf$rf),ncol(Y$Y)))
+      pred_courant <- array(NA, dim=c(ncol(rf$rf),ncol(Y$Y)))
       selection <- NULL
       for (t in 1:ncol(rf$rf)){
         BOOT <- rf$rf[,t]$boot
@@ -279,7 +279,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
           pred_courant[t,] <- rf$rf[,t]$Y_pred[[pred]]
         }
       }
-      oob.pred[i,] <-  apply(pred_courant,2,"mean")
+      oob.pred[i,] <-  apply(na.omit(pred_courant),2,"mean")
       err[i] <- mean((oob.pred[i,]-Y$Y[w_y,])^2)
     }
     return(list(err=err,oob.pred=oob.pred))
