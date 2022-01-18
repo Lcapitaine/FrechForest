@@ -233,18 +233,10 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
 
         if (is.element("image",split.spaces)==TRUE){
 
-          if( ERT==FALSE){
-            feuille_split_image = list(Pure = TRUE)
-            tryCatch({
-              feuille_split_image <-  var_split(Image_courant,Y_courant,timeScale)
-            }, error = function(sp){feuille_split_image = list(Pure = TRUE)})
-          }
+          feuille_split_image = list(Pure = TRUE)
+          tryCatch({feuille_split_image <- ERvar_split(X=Image_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
+          }, error = function(sp){feuille_split_image = list(Pure = TRUE)})
 
-          else{
-            feuille_split_image = list(Pure = TRUE)
-            tryCatch({feuille_split_image <- ERvar_split(X=Image_courant,Y=Y_courant,timeScale=timeScale,ntry = ntry)
-            }, error = function(sp){feuille_split_image = list(Pure = TRUE)})
-          }
 
           if (feuille_split_image$Pure==FALSE){
             F_SPLIT[which(F_SPLIT[,1]=="image"),2] <- feuille_split_image$impurete}
