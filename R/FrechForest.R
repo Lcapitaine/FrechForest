@@ -159,8 +159,15 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
 
   if (imp == FALSE){
-    var.ini <- impurity(Y, timeScale=timeScale)
-    varex <- 1 - mean(oob.err$err)/var.ini
+
+    if (Y$type=="image"){
+      var.ini = apply(Y$Y,2,"var")
+      varex = 1 - apply(oob.err$err,2,"mean")/var.ini
+    }
+    else{
+      var.ini <- impurity(Y, timeScale)
+      varex <- 1 - mean(oob.err$err)/var.ini
+    }
     frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels, xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, varex=varex, size=size, time=temps)
     class(frf) <- c("FrechForest")
     return(frf)
@@ -354,8 +361,15 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
   temps.imp <- Sys.time() - debut
 
-  var.ini <- impurity(Y, timeScale)
-  varex <- 1 - mean(oob.err$err)/var.ini
+  if (Y$type=="image"){
+    var.ini = apply(Y$Y,2,"var")
+    varex = 1 - apply(oob.err$err,2,"mean")/var.ini
+  }
+  else{
+    var.ini <- impurity(Y, timeScale)
+    varex <- 1 - mean(oob.err$err)/var.ini
+  }
+
   frf <- list(rf=rf$rf,type=rf$type,levels=rf$levels,xerror=xerror,oob.err=oob.err$err,oob.pred= oob.err$oob.pred, Importance=Importance, varex=varex, time=temps, size=size)
   class(frf) <- c("FrechForest")
   return(frf)

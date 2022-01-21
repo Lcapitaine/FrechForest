@@ -239,6 +239,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
 
   if (Y$type=="image"){
     oob.pred <- array(0,dim=dim(Y$Y))
+    err = array(NA, dim = dim(Y$Y))
     #errdp <- rep(NA,length(unique(id)))
     for (i in 1:length(Y$id)){
       indiv <- unique(Y$id)[i]
@@ -280,7 +281,7 @@ OOB.rfshape <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Im
         }
       }
       oob.pred[i,] <-  apply(na.omit(pred_courant),2,"mean")
-      err[i] <- mean((oob.pred[i,]-Y$Y[w_y,])^2)
+      err[i,] <- (oob.pred[i,]-Y$Y[w_y,])^2
     }
     return(list(err=err,oob.pred=oob.pred))
   }
