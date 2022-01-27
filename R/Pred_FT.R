@@ -80,8 +80,9 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
         distD <- -1*(is.element(X$X[wFactor,var.split],meanD))
       }
 
-      if (distG <= distD) { noeud_courant <- 2*noeud_courant}
-      if (distD < distG) {noeud_courant <- 2*noeud_courant +1}
+      if (is.nan(distG) || is.nan(distD)) {noeud_courant <- 2*noeud_courant + sample(c(0,1),1) }
+      else if (distG <= distD) { noeud_courant <- 2*noeud_courant}
+      else if (distD < distG) {noeud_courant <- 2*noeud_courant +1}
 
 
     }
