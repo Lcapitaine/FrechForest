@@ -6,17 +6,17 @@
 #' @param Factor [list]: A list that contains the input factors.
 #' @param Shape [list]: A list that contains the input shape.
 #' @param Image [list]: A list that contains the input images.
-#' @param aligned.shape [logical]: \code{TRUE} if the input shapes are aligned and normalized (\code{aligned.shape=FALSE} by default)
 #' @param timeScale [numeric]: Time scale for the input and output curves (\code{timeScale=0.1} by default)
 #'
 #' @import stringr
 #' @import geomorph
 #' @import kmlShape
 #' @import Evomorph
+#' @import emdist
 #'
 #' @export
 #'
-pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NULL, aligned.shape=FALSE ,timeScale=0.1){
+pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NULL ,timeScale=0.1){
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
   Inputs <- inputs
@@ -26,12 +26,6 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
   }
 
   id.pred <- unique(get(Inputs[1])$id)
-
-  if (is.element("shape",inputs)==TRUE & aligned.shape==FALSE){
-    for (k in 1:dim(Shape$X)[length(dim(Shape$X))]){
-      Shape$X[,,,k] <- gpagen(Shape$X[,,,k],print.progress = FALSE)$coords
-    }
-  }
 
 
   if (tree$Y$type=="factor"){
@@ -71,9 +65,9 @@ pred.FT <- function(tree, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL,Image=NU
       }
 
       if (type=="shape"){
-        elementz <- array(X$X[,,wShape,var.split],dim = c(nrow(meanG),ncol(meanG),1))
-        distG <- ShapeDist(elementz,meanG)
-        distD <- ShapeDist(elementz, meanD)
+        distG <- emd2d(X$X[,,wShape,var.split],meanG)
+        distD <- emd2d(X$X[,,wShape,var.split], meanD)
+
       }
 
       if (type=="image"){

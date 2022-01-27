@@ -89,7 +89,7 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
             Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
-          pred <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
+          pred <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
           res <- cbind(rep(t,dim(tree$Y_pred[[pred]])[1]),tree$Y_pred[[pred]])
         }
       }
@@ -143,7 +143,7 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
           }
 
           res <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,
-                          Shape=Shape_courant,Image=Image_courant, timeScale = timeScale, aligned.shape = TRUE)
+                          Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
         }
       }
 

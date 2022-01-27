@@ -6,7 +6,6 @@
 #' @param Factor [list]:
 #' @param Shape [list]:
 #' @param Image [list]:
-#' @param aligned.shape [logical]:
 #' @param timeScale [numeric]:
 #' @param d_out [numeric]:
 #' @param ... : optional parameters to be passed to the low level function
@@ -18,7 +17,7 @@
 #'
 #' @export
 #'
-predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL,aligned.shape=FALSE, timeScale=0.1, d_out=0.1,...){
+predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape=NULL, Image=NULL, timeScale=0.1, d_out=0.1,...){
   # La première etape est de toujours lire les predicteurs ::
 
   if (is.null(Curve)==FALSE){
@@ -47,13 +46,6 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
     str_sub(Inputs[k],1,1) <- str_to_upper(str_sub(Inputs[k],1,1))
   }
 
-  if (is.element("shape",inputs)==TRUE & aligned.shape==FALSE){
-    for (k in 1:dim(Shape$X)[length(dim(Shape$X))]){
-      Shape$X[,,,k] <- gpagen(Shape$X[,,,k],print.progress = FALSE)$coords
-    }
-    aligned.shape=TRUE
-  }
-
   Id.pred <- unique(get(Inputs[1])$id)
   pred.feuille <- matrix(0, ncol(object$rf), length(Id.pred))
 
@@ -62,7 +54,7 @@ predict.FrechForest <- function(object, Curve=NULL,Scalar=NULL,Factor=NULL,Shape
   }
 
   for (t in 1:ncol(object$rf)){
-    pred.feuille[t,] <- pred.FT(object$rf[,t], Curve = Curve,Scalar = Scalar,Factor=Factor,Shape=Shape,Image=Image, timeScale, aligned.shape = aligned.shape)
+    pred.feuille[t,] <- pred.FT(object$rf[,t], Curve = Curve,Scalar = Scalar,Factor=Factor,Shape=Shape,Image=Image, timeScale)
   }
 
   if (object$type=="scalar"){

@@ -11,7 +11,6 @@ pred.FT(
   Factor = NULL,
   Shape = NULL,
   Image = NULL,
-  aligned.shape = FALSE,
   timeScale = 0.1
 )
 }
@@ -27,8 +26,6 @@ pred.FT(
 \item{Shape}{[list]: A list that contains the input shape.}
 
 \item{Image}{[list]: A list that contains the input images.}
-
-\item{aligned.shape}{[logical]: \code{TRUE} if the input shapes are aligned and normalized (\code{aligned.shape=FALSE} by default)}
 
 \item{timeScale}{[numeric]: Time scale for the input and output curves (\code{timeScale=0.1} by default)}
 }

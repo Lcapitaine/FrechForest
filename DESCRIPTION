@@ -7,5 +7,5 @@ Depends: R (>= 3.6.0)
 License: GPL-2
 Encoding: UTF-8
 RoxygenNote: 7.1.1
-Imports: stats, kmlShape, foreach, doParallel, graphics, stringr, geomorph, Evomorph, parallel, pbapply
+Imports: stats, kmlShape, foreach, doParallel, graphics, stringr, geomorph, Evomorph, parallel, pbapply, emdist
 Suggests: testthat (>= 2.1.0)

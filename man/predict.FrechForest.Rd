@@ -11,7 +11,6 @@
   Factor = NULL,
   Shape = NULL,
   Image = NULL,
-  aligned.shape = FALSE,
   timeScale = 0.1,
   d_out = 0.1,
   ...
@@ -29,8 +28,6 @@
 \item{Shape}{[list]:}
 
 \item{Image}{[list]:}
-
-\item{aligned.shape}{[logical]:}
 
 \item{timeScale}{[numeric]:}
 

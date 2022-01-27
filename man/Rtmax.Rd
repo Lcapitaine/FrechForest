@@ -14,6 +14,7 @@ Rtmax(
   mtry,
   ERT = FALSE,
   ntry = 3,
+  nodesize = 5,
   timeScale = 0.1,
   ...
 )
@@ -36,6 +37,8 @@ Rtmax(
 \item{ERT}{[logical]: Number of trees to grow. This should not be set to too small a number, to ensure that every input row gets predicted at least a few times.}
 
 \item{ntry}{[numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.}
+
+\item{nodesize}{[numeric]: Minimal number of observations in a node.}
 
 \item{timeScale}{[numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.}
 

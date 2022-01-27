@@ -17,6 +17,7 @@ FrechForest(
   ERT = FALSE,
   timeScale = 0.1,
   ntry = 3,
+  nodesize = 5,
   imp = TRUE,
   d_out = 0.1,
   ...
@@ -46,6 +47,8 @@ FrechForest(
 \item{timeScale}{[numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.}
 
 \item{ntry}{[numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.}
+
+\item{nodesize}{[numeric]: minimal number of observations in a node.}
 
 \item{imp}{[logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)}
 

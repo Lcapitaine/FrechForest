@@ -10,15 +10,17 @@
 #' @param ERT [logical]: Number of trees to grow. This should not be set to too small a number, to ensure that every input row gets predicted at least a few times.
 #' @param timeScale [numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.
 #' @param ntry [numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.
+#' @param nodesize [numeric]: Minimal number of observations in a node.
 #' @param ... :  optional parameters to be passed to the low level function
 #'
 #' @import kmlShape
 #' @import stringr
 #' @import Evomorph
 #' @import geomorph
+#' @import emdist
 #'
 #' @export
-Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,ntry=3, timeScale=0.1, ...){
+Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y,mtry,ERT=FALSE,ntry=3, nodesize=1,timeScale=0.1, ...){
 
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
@@ -102,7 +104,7 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
         if (is.element("image",inputs)==TRUE) wXImage <- c(wXImage, which(Image_boot$id==l))
       }
 
-      if (length(unique(Y_boot$id[w]))>1 & imp_nodes[[unique(id_feuille)[i]]] >0){
+      if (length(unique(Y_boot$id[w]))>nodesize & imp_nodes[[unique(id_feuille)[i]]] >0){
 
         # On est ici
 
@@ -297,8 +299,8 @@ Rtmax <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,Y
           }
 
           if (X$type=="shape"){
-            meanFg <- mshape(X_boot$X[,,w_gauche,vsplit_space])
-            meanFd <- mshape(X_boot$X[,,w_droit,vsplit_space])
+            meanFg <- X_boot$X[,,which(X_boot$id==feuille_split$gauche),vsplit_space]
+            meanFd <- X_boot$X[,,which(X_boot$id==feuille_split$droite),vsplit_space]
           }
 
           if (X$type=="image"){

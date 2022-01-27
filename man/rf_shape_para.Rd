@@ -15,8 +15,8 @@ rf_shape_para(
   ntree,
   ncores,
   ERT = FALSE,
-  aligned.shape = FALSE,
   ntry = 3,
+  nodesize = 5,
   timeScale = 0.1,
   ...
 )

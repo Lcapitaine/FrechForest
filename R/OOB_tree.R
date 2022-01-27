@@ -59,7 +59,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
         id_wXScalar <- which(Scalar$id==i)
         Scalar_courant <- list(type="scalar",X=Scalar$X[id_wXScalar,,drop=FALSE], id=Scalar$id[id_wXScalar])
       }
-      pred_courant <- pred.FT(tree, Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape = Shape_courant,Image=Image_courant, timeScale=timeScale, aligned.shape = TRUE)
+      pred_courant <- pred.FT(tree, Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,Shape = Shape_courant,Image=Image_courant, timeScale=timeScale)
       #chancla <- DouglasPeuckerNbPoints(tree$Y_Curves[[pred_courant]]$times, tree$Y_Curves[[pred_courant]]$traj, nbPoints = length(stats::na.omit(Y[id_w])))
       xerror[which(OOB==i)] <- kmlShape::distFrechet(tree$Y_pred[[pred_courant]]$times, tree$Y_pred[[pred_courant]]$traj, Y$time[id_wY], Y$Y[id_wY], timeScale = d_out)^2
     }
@@ -88,7 +88,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
     if (is.element("shape",inputs)==TRUE) Shape_courant  <- list(type="shape", X=Shape$X[,,w_XShape,, drop=FALSE], id=Shape$id[w_XShape])
     if (is.element("image",inputs)==TRUE) Image_courant  <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
 
-    pred <- pred.FT(tree,Curve=Curve_courant,Scalar = Scalar_courant,Factor=Factor_courant, Shape=Shape_courant, Image = Image_courant, aligned.shape = TRUE)
+    pred <- pred.FT(tree,Curve=Curve_courant,Scalar = Scalar_courant,Factor=Factor_courant, Shape=Shape_courant, Image = Image_courant)
 
     if (Y$type=="scalar"){xerror <- (Y$Y[w_y]-pred)^2}
     if (Y$type=="factor"){xerror <- 1*(pred!=Y$Y[w_y])}

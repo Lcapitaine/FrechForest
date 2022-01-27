@@ -7,14 +7,19 @@
 #'
 #' @import kmlShape
 #' @import Evomorph
+#' @import emdist
 #'
 #' @keywords internal
 ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
   impur <- rep(0,dim(X$X)[length(dim(X$X))])
   toutes_imp <- list()
+  impur_list = list()
   split <- list()
   Pure <- FALSE
+
+  Imp_shape <- Inf
+  var_shape <- Inf
 
   for (i in 1:dim(X$X)[length(dim(X$X))]){
 
@@ -93,13 +98,13 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
       else{
         impur[i] <- Inf
-        split[[i]] <- Inf
-      }
-
+        split[[i]] <- Inf}
     }
 
+
     if (X$type=="shape"){
-      if (dim(X$X[,,,i])[3]>2){
+      n_elem = dim(X$X)[3]
+      if (n_elem>2){
 
         id_centers <- matrix(NA,ntry,2)
         for (l in 1:ntry){
@@ -108,49 +113,39 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
 
         split_prime <- matrix(2,ntry,length(X$id))
 
-        u <- 0
-        qui <- NULL
-        impurete2 <- list()
-        imp <- NULL
+        dd = rep(NA,n_elem)
+        dg = rep(NA,n_elem)
 
         for (c in 1:ntry){
-          dg <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[c,1]),i])
-          dd <- ShapeDist(X$X[,,,i],X$X[,,which(X$id==id_centers[c,2]),i])
+
+          for (k in 1:n_elem){
+            dg[k] <- emd2d(X$X[,,k,i],X$X[,,which(X$id==id_centers[c,1]),i])
+            dd[k] <- emd2d(X$X[,,k,i],X$X[,,which(X$id==id_centers[c,2]),i])
+          }
+
           for (l in 1:length(unique(X$id))){
             if (dg[l]<=dd[l]) split_prime[c,l] <- 1
           }
           if (length(split_prime[c,])>1){
-            u <- u+1
-            qui <- c(qui,c)
-            impurete2[[c]] <- impurity_split(Y,split_prime[c,], timeScale)
-            imp <- c(imp, impurete2[[c]]$impur)
+            impurete2 <- impurity_split(Y,split_prime[c,], timeScale)
+
+            if (impurete2$impur <Imp_shape && is.na(impurete2$impur)==FALSE){
+              Imp_shape <- impurete2$impur
+              var_shape <- i
+              gauche = id_centers[c,1]
+              droite = id_centers[c,2]
+
+              impur_list = impurete2$imp_list
+
+              split = split_prime[c,]
+              Pure = FALSE
+            }
           }
         }
-        ## Il nous faut calculer les distances à gauche et à droite pour chaque element
 
-        if (u>0){
-          gagnant <- qui[which.min(imp)]
-          split[[i]] <- split_prime[gagnant,]
-
-          impurete <- impurete2[[gagnant]]
-          impur[i] <- impurete$impur
-          toutes_imp[[i]] <- impurete$imp_list
-        }
-
-        else{
-          impur[i] <- Inf
-          split[[i]] <- Inf
-        }
-
-      }
-
-      else{
-        split[[i]] <- c(1,2)
-        impurete <- impurity_split(Y,split[[i]], timeScale)
-        impur[i] <- impurete$impur
-        toutes_imp[[i]] <- impurete$imp_list
       }
     }
+
 
     if (X$type=="image"){
       if (nrow(X$X)>2){
@@ -262,6 +257,10 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
         split[[i]] <- Inf
       }
     }
+  }
+
+  if (Imp_shape<Inf){
+    return(list(split = split, impurete = Imp_shape, gauche = gauche, droite= droite , variable = var_shape,Pure = Pure, impur_list = impur_list))
   }
 
   if (length(unique(impur))==1 & is.element(Inf,impur)==TRUE){

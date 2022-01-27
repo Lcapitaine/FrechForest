@@ -10,24 +10,25 @@
 #' @param ntree
 #' @param ncores
 #' @param ERT
-#' @param aligned.shape
 #' @param timeScale
 #' @param ntry
+#' @param nodesize
 #' @param ...
 #'
 #' @import foreach
 #' @import kmlShape
 #' @import doParallel
 #' @import pbapply
+#' @import emdist
 #'
 #' @keywords internal
-rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE, aligned.shape=FALSE,ntry=3,timeScale=0.1, ...){
+rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE,ntry=3,nodesize=1,timeScale=0.1, ...){
 
   cl <- parallel::makeCluster(ncores)
   doParallel::registerDoParallel(cl)
 
   trees <- pbsapply(1:ntree, FUN=function(i){
-    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT, aligned.shape=aligned.shape,ntry=ntry,timeScale=timeScale, ...)
+    Rtmax(Curve=Curve,Scalar = Scalar,Factor = Factor,Shape=Shape,Image=Image,Y,mtry,ERT=ERT,ntry=ntry,nodesize=nodesize,timeScale=timeScale, ...)
   },cl=cl)
 
   parallel::stopCluster(cl)
@@ -54,6 +55,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @param ntry [numeric]: Only with \code{ERT=TRUE}, allows to manage with randomness of the trees.
 #' @param timeScale [numeric]: Allow to modify the time scale, increasing or decreasing the cost of the horizontal shift. If timeScale is very big, then the Frechet mean tends to the Euclidean distance. If timeScale is very small, then it tends to the Dynamic Time Warping. Only used when there are trajectories either in input or output.
 #' @param imp [logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)
+#' @param nodesize [numeric]: minimal number of observations in a node.
 #' @param d_out [string]: "euc" or "frec".
 #' @param ... : optional parameters to be passed to the low level function
 #'
@@ -62,6 +64,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @import doParallel
 #' @import parallel
 #' @import pbapply
+#' @import emdist
 #'
 #' @return A Frechet random forest which is a list of the following elements: \itemize{
 #' \item \code{rf:} a list of the \code{ntree} randomized Frechet trees that compose the forest.
@@ -73,7 +76,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' }
 #' @export
 #'
-FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3, imp=TRUE, d_out=0.1, ...){
+FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3,nodesize=1, imp=TRUE, d_out=0.1, ...){
 
 
   ### On va regarder les differentes entrees:
@@ -85,13 +88,6 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   }
   if (is.null(Factor)==FALSE){
     Factor <- list(type="factor",X=Factor$X,id=Factor$id)
-  }
-
-  if (is.null(Shape)==FALSE){
-    Shape <- list(type="shape",X=Shape$X,id=Shape$id)
-    for (k in 1:dim(Shape$X)[length(dim(Shape$X))]){
-      Shape$X[,,,k] <- gpagen(Shape$X[,,,k], print.progress = FALSE)$coords
-    }
   }
 
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
@@ -131,7 +127,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
   print("Building the maximal Frechet trees...")
 
   debut <- Sys.time()
-  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,ncores=ncores, aligned.shape = TRUE)
+  rf <-  rf_shape_para(Curve=Curve,Scalar=Scalar, Factor=Factor, Shape=Shape, Image=Image,Y=Y, mtry=mtry, ntree=ntree,ERT=ERT,ntry = ntry,timeScale = timeScale,nodesize = nodesize,ncores=ncores)
   temps <- Sys.time() - debut
 
   if (Y$type=="shape" || Y$type=="image"){
