@@ -17,7 +17,7 @@ FrechForest(
   ERT = FALSE,
   timeScale = 0.1,
   ntry = 3,
-  nodesize = 5,
+  nodesize = 1,
   imp = TRUE,
   d_out = 0.1,
   ...

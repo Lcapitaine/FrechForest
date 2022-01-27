@@ -16,7 +16,7 @@ rf_shape_para(
   ncores,
   ERT = FALSE,
   ntry = 3,
-  nodesize = 5,
+  nodesize = 1,
   timeScale = 0.1,
   ...
 )

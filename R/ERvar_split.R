@@ -124,7 +124,9 @@ ERvar_split <- function(X ,Y,ntry=3,timeScale=0.1){
           }
 
           for (l in 1:length(unique(X$id))){
-            if (dg[l]<=dd[l]) split_prime[c,l] <- 1
+
+            if (is.nan(dg[l]) || is.nan(dd[l])) split_prime[c,l] <- sample(c(1,2),1)
+            else if (dg[l]<=dd[l]) split_prime[c,l] <- 1
           }
           if (length(split_prime[c,])>1){
             impurete2 <- impurity_split(Y,split_prime[c,], timeScale)
