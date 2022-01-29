@@ -17,14 +17,14 @@
 #' @import emdist
 #'
 #' @export
-OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,
+OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,
                                ncores=NULL,range=NULL, Y, timeScale=0.1, d_out=0.1){
 
   ### Pour optimiser le code il faudra virer cette ligne et ne le calculer qu'une seule fois !
   inputs <- read.Xarg(c(Curve,Scalar,Factor,Shape,Image))
   Inputs <- inputs
 
-  trees = list.files(rf)
+  trees = list.files()
   ntree = length(trees)
 
   if(is.null(ncores)==TRUE){
