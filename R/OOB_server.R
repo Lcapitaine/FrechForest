@@ -163,6 +163,8 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
   if (Y$type=="image"){
 
+    err = matrix(NA,length(range),ncol(Y$Y))
+
     for (i in 1:length(range)){
       indiv <- Y$id[range[i]]
       w_y <- which(Y$id==indiv)
@@ -204,17 +206,18 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
             Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
           }
 
-          res <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,
+          pred <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,
                          Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
+
+          res = tree$tree$Y_pred[[pred]]
         }
       }
 
       parallel::stopCluster(cl)
 
-      err[i] <- (apply(pred_courant,2,'mean')-Y$Y[w_y,])^2
+      err[i,] <- (apply(pred_courant,2,'mean')-Y$Y[w_y,])^2
     }
   }
 
   return(err)
-
 }
