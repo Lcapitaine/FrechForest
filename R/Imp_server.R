@@ -25,9 +25,6 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
   trees = list.files(Trees)
   ntree = length(trees)
 
-  t1 <- gsub(".Rdata","", trees)
-  nt <- sort(as.numeric(gsub("tree_","", t1)))
-
   p=1
 
   if (type=="curve"){

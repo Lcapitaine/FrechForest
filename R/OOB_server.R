@@ -54,6 +54,9 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
       pred_courant = NULL
 
+      cl <- parallel::makeCluster(ncores)
+      doParallel::registerDoParallel(cl)
+
       pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
 
@@ -92,6 +95,8 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
         }
       }
 
+      parallel::stopCluster(cl)
+
 
       mean_pred <- meanFrechet(pred_courant, timeScale = d_out)
       dp <- as.data.frame(Curve.reduc.times(mean_pred$times, mean_pred$traj, Y$time[w_y]))
@@ -106,6 +111,9 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
       indiv <- Y$id[range[i]]
       w_y <- which(Y$id==indiv)
       pred_courant <- NULL
+
+      cl <- parallel::makeCluster(ncores)
+      doParallel::registerDoParallel(cl)
 
       pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "c") %dopar% {
 
@@ -145,6 +153,8 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
         }
       }
 
+      parallel::stopCluster(cl)
+
       err[i] <- (mean(pred_courant)-Y$Y[w_y])^2
 
     }
@@ -157,6 +167,9 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
       indiv <- Y$id[range[i]]
       w_y <- which(Y$id==indiv)
       pred_courant <- NULL
+
+      cl <- parallel::makeCluster(ncores)
+      doParallel::registerDoParallel(cl)
 
       pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "c") %dopar% {
 
@@ -195,6 +208,8 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
                          Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
         }
       }
+
+      parallel::stopCluster(cl)
 
       err[i] <- (apply(pred_courant,2,'mean')-Y$Y[w_y,])^2
     }
