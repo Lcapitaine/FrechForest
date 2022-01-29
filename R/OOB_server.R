@@ -14,6 +14,7 @@
 #'
 #' @import stringr
 #' @import kmlShape
+#' @import emdist
 #'
 #' @export
 OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL,
@@ -148,6 +149,57 @@ OOB.server <- function(rf, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
       }
 
       err[i] <- (mean(pred_courant)-Y$Y[w_y])^2
+
+    }
+  }
+
+
+  if (Y$type=="image"){
+
+    for (i in 1:length(range)){
+      indiv <- Y$id[range[i]]
+      w_y <- which(Y$id==indiv)
+      pred_courant <- NULL
+
+      pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "c") %dopar% {
+
+        tree = get(load(paste0("tree_",nt[t],".Rdata")))
+        BOOT <- tree$boot
+        oob <- setdiff(unique(Y$id),BOOT)
+
+        if (is.element(indiv, oob)== TRUE){
+
+          if (is.element("curve",inputs)==TRUE){
+            w_XCurve <- which(Curve$id== indiv)
+            Curve_courant <- list(type="curve", X=Curve$X[w_XCurve,, drop=FALSE], id=Curve$id[w_XCurve], time=Curve$time[w_XCurve])
+          }
+
+          if (is.element("scalar",inputs)==TRUE){
+            w_XScalar <- which(Scalar$id== indiv)
+            Scalar_courant <- list(type="scalar", X=Scalar$X[w_XScalar,, drop=FALSE], id=Scalar$id[w_XScalar])
+          }
+
+          if (is.element("factor",inputs)==TRUE){
+            w_XFactor <- which(Factor$id== indiv)
+            Factor_courant <- list(type="factor", X=Factor$X[w_XFactor,, drop=FALSE], id=Factor$id[w_XFactor])
+          }
+
+          if (is.element("shape",inputs)==TRUE){
+            w_XShape <- which(Shape$id== indiv)
+            Shape_courant <- list(type="shape", X=Shape$X[,,w_XShape,, drop=FALSE], id=Shape$id[w_XShape])
+          }
+
+          if (is.element("image",inputs)==TRUE){
+            w_XImage <- which(Image$id== indiv)
+            Image_courant <- list(type="image", X=Image$X[w_XImage,,, drop=FALSE], id=Image$id[w_XImage])
+          }
+
+          res <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,
+                         Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
+        }
+      }
+
+      err[i] <- (apply(pred_courant,2,'mean')-Y$Y[w_y,])^2
 
     }
   }
