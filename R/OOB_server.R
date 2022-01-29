@@ -209,7 +209,7 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
           pred <- pred.FT(tree,Curve=Curve_courant,Scalar=Scalar_courant,Factor=Factor_courant,
                          Shape=Shape_courant,Image=Image_courant, timeScale = timeScale)
 
-          res = tree$tree$Y_pred[[pred]]
+          res = tree$Y_pred[[pred]]
         }
       }
 
