@@ -173,7 +173,7 @@ OOB.server <- function(Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
       cl <- parallel::makeCluster(ncores)
       doParallel::registerDoParallel(cl)
 
-      pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "c") %dopar% {
+      pred_courant <- foreach::foreach(t = 1:ntree,.packages = "kmlShape" ,.combine = "rbind") %dopar% {
 
         tree = get(load(trees[t]))
         BOOT <- tree$boot
