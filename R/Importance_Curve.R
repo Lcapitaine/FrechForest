@@ -53,7 +53,7 @@ Importance_Curve <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
         OOB.tree(tree, Curve=Curve, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)
     }
     parallel::stopCluster(cl)
-    imp[p,] <- mean(Curve.err)
+    imp[p] <- mean(Curve.err)
   }
 
   return(imp)
