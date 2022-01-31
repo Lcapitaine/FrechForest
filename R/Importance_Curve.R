@@ -6,7 +6,6 @@
 #' @param Shape [list]:
 #' @param Image [list]:
 #' @param Y [list]:
-#' @param type [string]:
 #' @param range [vector]:
 #' @param ncores [numeric]:
 #' @param timeScale [numeric]:
@@ -14,7 +13,7 @@
 #' @export
 #'
 Importance_Curve <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
-                              Image=NULL ,Y ,type=NULL, range=NULL,ncores=NULL, timeScale=0.1){
+                              Image=NULL ,Y, range=NULL,ncores=NULL, timeScale=0.1){
 
   if(is.null(ncores)==TRUE){
     ncores <- detectCores()

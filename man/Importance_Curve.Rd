@@ -11,7 +11,6 @@ Importance_Curve(
   Shape = NULL,
   Image = NULL,
   Y,
-  type = NULL,
   range = NULL,
   ncores = NULL,
   timeScale = 0.1
@@ -29,8 +28,6 @@ Importance_Curve(
 \item{Image}{[list]:}
 
 \item{Y}{[list]:}
-
-\item{type}{[string]:}
 
 \item{range}{[vector]:}
 
