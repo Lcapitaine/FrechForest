@@ -12,8 +12,8 @@
 #'
 #' @export
 #'
-Importance_Scalar <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
-                             Image=NULL ,Y, range=NULL,ncores=NULL, timeScale=0.1){
+Importance_Factor <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
+                              Image=NULL ,Y, range=NULL,ncores=NULL, timeScale=0.1){
 
   if(is.null(ncores)==TRUE){
     ncores <- detectCores()
@@ -24,7 +24,7 @@ Importance_Scalar <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
 
   imp = rep(NA,length(range))
 
-  Scalar.err <- matrix(NA, ntree, length(range))
+  Factor.err <- matrix(NA, ntree, length(range))
 
 
   for (p in 1:length(range)){
@@ -33,27 +33,27 @@ Importance_Scalar <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
     doParallel::registerDoParallel(cl)
     k=1
 
-    Scalar.err <- foreach::foreach(k = 1:ntree,.packages = "kmlShape" ,.combine = "cbind") %dopar% {
+    Factor.err <- foreach::foreach(k = 1:ntree,.packages = "kmlShape" ,.combine = "cbind") %dopar% {
 
       tree <- get(load(trees[k]))
       BOOT <- tree$boot
       nboot <- length(unique(Y$id))- length(BOOT)
 
-      id_boot_Scalar <- NULL
+      id_boot_Factor <- NULL
       for (i in 1:length(BOOT)){
-        id_boot_Scalar <- c(id_boot_Scalar, which(Scalar$id==BOOT[i]))
+        id_boot_Factor <- c(id_boot_Factor, which(Factor$id==BOOT[i]))
       }
 
-      Scalar.perm <- Scalar
+      Factor.perm <- Factor
 
-      Scalar.perm$X[-id_boot_Scalar,range[p]] <- sample(Scalar.perm$X[-id_boot_Scalar,range[p]])
+      Factor.perm$X[-id_boot_Factor,range[p]] <- sample(Factor.perm$X[-id_boot_Factor,range[p]])
 
 
-      res <- OOB.tree(tree, Curve=Curve, Scalar = Scalar.perm, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)-
+      res <- OOB.tree(tree, Curve=Curve, Scalar = Scalar, Factor=Factor.perm,Shape=Shape, Image=Image, Y, timeScale=timeScale)-
         OOB.tree(tree, Curve=Curve, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)
     }
     parallel::stopCluster(cl)
-    imp[p] <- mean(Scalar.err)
+    imp[p] <- mean(Factor.err)
   }
 
   return(imp)
