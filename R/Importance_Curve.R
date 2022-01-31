@@ -22,7 +22,7 @@ Importance_Curve <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
   trees = list.files()
   ntree = length(trees)
 
-  imp = matrix(NA, length(range), ncol(Y$Y))
+  imp = rep(NA,length(range))
 
   Curve.err <- matrix(NA, ntree, length(range))
 
@@ -53,7 +53,7 @@ Importance_Curve <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
         OOB.tree(tree, Curve=Curve, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image, Y, timeScale=timeScale)
     }
     parallel::stopCluster(cl)
-    imp[p,] <- apply(Curve.err, 2, "mean")
+    imp[p,] <- mean(Curve.err)
   }
 
   return(imp)
