@@ -46,7 +46,7 @@ Importance_Image <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
 
       Image.perm <- Image
 
-      Image.perm$X[-id_boot_Image,range[p]] <- Image.perm$X[-id_boot_Image,,range[p]][sample(nboot),]
+      Image.perm$X[-id_boot_Image,,range[p]] <- Image.perm$X[-id_boot_Image,,range[p]][sample(nboot)]
 
 
       res <- OOB.tree(tree, Curve=Curve, Scalar = Scalar, Factor=Factor,Shape=Shape, Image=Image.perm, Y, timeScale=timeScale)-
