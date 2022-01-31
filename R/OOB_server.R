@@ -1,6 +1,5 @@
 #' OOB for random Forest
 #'
-#' @param rf [list]:
 #' @param Curve [list]:
 #' @param Scalar [list]:
 #' @param Factor [list]:

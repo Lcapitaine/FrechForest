@@ -3,7 +3,7 @@
 S3method(predict,FrechForest)
 export(FrechForest)
 export(FrechetTree)
-export(Importance_server)
+export(Importance_Curve)
 export(OOB.server)
 export(OOB.tree)
 export(Rtmax)

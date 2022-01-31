@@ -13,7 +13,7 @@
 #' @param timeScale [numeric]:
 #' @param xerror [vector]
 #'
-#' @export
+#' @keywords internal
 #'
 Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
                               Image=NULL ,Y ,type=NULL, range=NULL,ncores=NULL, timeScale=0.1, xerror){
@@ -39,7 +39,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
       for (k in 1:ntree){
 
-        tree <- get(load(paste0("tree_",nt[k],".Rdata")))
+        tree <- get(load(trees[k]))
         BOOT <- tree$boot
         nboot <- length(unique(Y$id))- length(BOOT)
 
@@ -75,7 +75,7 @@ Importance_server <- function(Trees,Curve=NULL,Scalar=NULL, Factor=NULL, Shape=N
 
       for (k in 1:ntree){
 
-        tree <- get(load(paste0("tree_",nt[k],".Rdata")))
+        tree <- get(load(trees[k]))
 
         BOOT <- tree$boot
         nboot <- length(unique(Y$id))- length(BOOT)

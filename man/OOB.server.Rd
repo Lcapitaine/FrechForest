@@ -5,7 +5,6 @@
 \title{OOB for random Forest}
 \usage{
 OOB.server(
-  rf,
   Curve = NULL,
   Scalar = NULL,
   Factor = NULL,
@@ -19,8 +18,6 @@ OOB.server(
 )
 }
 \arguments{
-\item{rf}{[list]:}
-
 \item{Curve}{[list]:}
 
 \item{Scalar}{[list]:}
