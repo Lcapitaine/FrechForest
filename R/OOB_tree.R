@@ -105,6 +105,7 @@ OOB.tree <- function(tree, Curve=NULL, Scalar=NULL, Factor=NULL, Shape=NULL, Ima
       for (l in 1:length(pred)){
         xerror[l] <- mean((Y$Y[w_y[l],]-tree$Y_pred[[pred[l]]])^2)
       }
+      apply(xerror, 2, "mean")
     }
 
   }

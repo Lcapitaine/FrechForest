@@ -27,7 +27,6 @@ Importance_Curve <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL,
   Curve.err <- matrix(NA, ntree, length(range))
 
 
-
   for (p in 1:length(range)){
 
     cl <- parallel::makeCluster(ncores)
