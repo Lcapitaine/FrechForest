@@ -4,7 +4,7 @@
 #' @param traj.init
 #' @param time.new
 #'
-#'
+#' @export
 #' @keywords internal
 Curve.reduc.times <- function(time.init , traj.init, time.new){
   new.Curve <- matrix(NA,length(time.new),2)
