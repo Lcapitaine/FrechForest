@@ -76,7 +76,9 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' }
 #' @export
 #'
-FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y, mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE, timeScale=0.1,ntry=3,nodesize=1, imp=TRUE, d_out=0.1, ...){
+FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y,
+                        mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE,timeScale=0.1,
+                        ntry=3,nodesize=1, imp=TRUE, d_out=0.1, ...){
 
 
   ### On va regarder les differentes entrees:
@@ -134,7 +136,7 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
     rf <- list(type=Y$type, rf=rf, size = dim(Y$Y) )
   }
   else {
-    rf <- list(type=Y$type, rf=rf, levels=levels(Y$Y))
+    rf <- list(type=Y$type, rf=rf, levels=unique(Y$Y))
   }
 
 
