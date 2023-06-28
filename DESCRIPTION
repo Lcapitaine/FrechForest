@@ -6,6 +6,6 @@ Description: Random forests are a statistical learning method widely used in man
 Depends: R (>= 3.6.0)
 License: GPL-2
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 Imports: stats, kmlShape, foreach, doParallel, graphics, stringr, geomorph, Evomorph, parallel, pbapply, emdist
 Suggests: testthat (>= 2.1.0)

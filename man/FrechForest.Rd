@@ -20,6 +20,7 @@ FrechForest(
   nodesize = 1,
   imp = TRUE,
   d_out = 0.1,
+  err_compute = TRUE,
   ...
 )
 }
@@ -53,6 +54,8 @@ FrechForest(
 \item{imp}{[logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)}
 
 \item{d_out}{[string]: "euc" or "frec".}
+
+\item{err_compute}{[logical]: whether to compute OOB error (default \code{err_compute=}TRUE). If \code{err_compute=}FALSE, it won't compute importance too.}
 
 \item{...}{: optional parameters to be passed to the low level function}
 }

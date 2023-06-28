@@ -12,6 +12,15 @@ Curve.reduc.times <- function(time.init , traj.init, time.new){
     if (round(time.init[w.time]-time.new[j],5)==0){
       new.Curve[j,] <- c(time.new[j], traj.init[w.time])
     }
+
+    else if (length(which(time.init<time.new[j])) == 0){
+      new.Curve[j,] <- c(time.new[j],traj.init[w.time])
+    }
+
+    else if (length(which(time.init>time.new[j])) == 0){
+      new.Curve[j,] <- c(time.new[j],traj.init[w.time])
+    }
+
     else {
       t_g <- (time.new[j]>time.init[w.time])*(time.init[w.time]) + (time.new[j]<time.init[w.time])*(time.init[w.time-1])
       t_d <- (time.new[j]<time.init[w.time])*(time.init[w.time]) + (time.new[j]>time.init[w.time])*(time.init[w.time+1])
@@ -24,3 +33,4 @@ Curve.reduc.times <- function(time.init , traj.init, time.new){
   }
   return(new.Curve)
 }
+

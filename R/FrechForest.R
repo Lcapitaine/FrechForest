@@ -22,7 +22,8 @@
 #' @import emdist
 #'
 #' @keywords internal
-rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,Y,mtry,ntree, ncores,ERT=FALSE,ntry=3,nodesize=1,timeScale=0.1, ...){
+rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=NULL,
+                          Y,mtry,ntree, ncores,ERT=FALSE,ntry=3,nodesize=1,timeScale=0.1,...){
 
   cl <- parallel::makeCluster(ncores)
   doParallel::registerDoParallel(cl)
@@ -57,6 +58,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #' @param imp [logical]: TRUE to compute the variables importance FALSE otherwise (default \code{imp=}TRUE)
 #' @param nodesize [numeric]: minimal number of observations in a node.
 #' @param d_out [string]: "euc" or "frec".
+#' @param err_compute [logical]: whether to compute OOB error (default \code{err_compute=}TRUE). If \code{err_compute=}FALSE, it won't compute importance too.
 #' @param ... : optional parameters to be passed to the low level function
 #'
 #' @import stringr
@@ -78,7 +80,7 @@ rf_shape_para <- function(Curve=NULL, Scalar=NULL, Factor=NULL,Shape=NULL,Image=
 #'
 FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=NULL ,Y,
                         mtry=NULL, ntree=100,ncores=NULL,ERT=FALSE,timeScale=0.1,
-                        ntry=3,nodesize=1, imp=TRUE, d_out=0.1, ...){
+                        ntry=3,nodesize=1, imp=TRUE, d_out=0.1,err_compute=TRUE, ...){
 
 
   ### On va regarder les differentes entrees:
@@ -141,6 +143,12 @@ FrechForest <- function(Curve=NULL,Scalar=NULL, Factor=NULL, Shape=NULL, Image=N
 
 
   print("Forest constucted !")
+
+  if (err_compute==FALSE){
+    class(rf) <- c("FrechForest")
+    return(rf)
+  }
+
   xerror <- rep(NA, ntree)
 
   print("OOB error computation...")
